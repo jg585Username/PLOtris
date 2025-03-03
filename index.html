@@ -50,6 +50,12 @@
             border-radius: 4px;
             width: 100px;
         }
+        select {
+            padding: 6px 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
         button {
             padding: 8px 15px;
             font-size: 14px;
@@ -122,11 +128,17 @@
             margin-bottom: 10px;
             background: #dc3545;
         }
+        .scale-info {
+            font-size: 12px;
+            color: #555;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
 
 <div id="controls">
+    <!-- Paper Settings -->
     <div>
         <h2>Paper Settings</h2>
         <div>
@@ -137,8 +149,19 @@
             <label for="paperHeight">Height:</label>
             <input type="number" id="paperHeight" value="600">
         </div>
+        <div>
+            <label for="paperUnit">Unit:</label>
+            <select id="paperUnit">
+                <option value="px" selected>px</option>
+                <option value="cm">cm</option>
+                <option value="mm">mm</option>
+                <option value="inch">inch</option>
+            </select>
+            <span id="paperScaleInfo" class="scale-info"></span>
+        </div>
         <button id="setPaperSize">Apply</button>
     </div>
+    <!-- Frame Settings -->
     <div>
         <h2>Frame Settings</h2>
         <div>
@@ -148,6 +171,16 @@
         <div>
             <label for="frameHeight">Height:</label>
             <input type="number" id="frameHeight" value="100">
+        </div>
+        <div>
+            <label for="frameUnit">Unit:</label>
+            <select id="frameUnit">
+                <option value="px" selected>px</option>
+                <option value="cm">cm</option>
+                <option value="mm">mm</option>
+                <option value="inch">inch</option>
+            </select>
+            <span id="frameScaleInfo" class="scale-info"></span>
         </div>
         <button id="addFrame">Add Frame</button>
     </div>
@@ -163,8 +196,9 @@
         <thead>
         <tr>
             <th>ID</th>
-            <th>Width (px)</th>
-            <th>Height (px)</th>
+            <th>Width</th>
+            <th>Height</th>
+            <th>Unit</th>
             <th>Actions</th>
         </tr>
         </thead>
@@ -175,50 +209,81 @@
 </div>
 
 <script>
+    // Conversion factors for scaling down from real size to screen size
+    const conversionFactors = {
+        'px': 1,
+        'cm': 10,   // 1 cm = 10 px on screen
+        'mm': 1,    // 1 mm = 1 px on screen
+        'inch': 25  // 1 inch = 25 px on screen
+    };
+
+    // Update scale info displays for paper and frame units
+    function updateScaleInfo() {
+        const paperUnit = document.getElementById('paperUnit').value;
+        const frameUnit = document.getElementById('frameUnit').value;
+        document.getElementById('paperScaleInfo').textContent = `Scale: 1 ${paperUnit} = ${conversionFactors[paperUnit]} px`;
+        document.getElementById('frameScaleInfo').textContent = `Scale: 1 ${frameUnit} = ${conversionFactors[frameUnit]} px`;
+    }
+
+    // Initialize scale info
+    updateScaleInfo();
+    // Attach change event listeners to update scale info on unit change
+    document.getElementById('paperUnit').addEventListener('change', updateScaleInfo);
+    document.getElementById('frameUnit').addEventListener('change', updateScaleInfo);
+
     const paper = document.getElementById('paper');
     const frameList = document.getElementById('frameList');
     let frameCount = 0;
 
-    // Set the paper size based on user input
+    // Set the paper size based on user input and chosen unit
     document.getElementById('setPaperSize').addEventListener('click', () => {
-        const width = document.getElementById('paperWidth').value;
-        const height = document.getElementById('paperHeight').value;
-        paper.style.width = width + 'px';
-        paper.style.height = height + 'px';
+        const paperWidthInput = document.getElementById('paperWidth').value;
+        const paperHeightInput = document.getElementById('paperHeight').value;
+        const paperUnit = document.getElementById('paperUnit').value;
+        const factor = conversionFactors[paperUnit];
+
+        // Convert input value to pixels based on the factor
+        paper.style.width = (paperWidthInput * factor) + 'px';
+        paper.style.height = (paperHeightInput * factor) + 'px';
     });
 
     // Add a new frame to the paper and update the tracker
     document.getElementById('addFrame').addEventListener('click', () => {
-        const frameWidth = document.getElementById('frameWidth').value;
-        const frameHeight = document.getElementById('frameHeight').value;
+        const frameWidthInput = document.getElementById('frameWidth').value;
+        const frameHeightInput = document.getElementById('frameHeight').value;
+        const frameUnit = document.getElementById('frameUnit').value;
+        const factor = conversionFactors[frameUnit];
+
         frameCount++;
         const frameId = 'frame-' + frameCount;
 
-        // Create the frame element
+        // Create the frame element and set its size (converted to px)
         const frame = document.createElement('div');
         frame.classList.add('frame');
         frame.id = frameId;
-        frame.style.width = frameWidth + 'px';
-        frame.style.height = frameHeight + 'px';
+        frame.style.width = (frameWidthInput * factor) + 'px';
+        frame.style.height = (frameHeightInput * factor) + 'px';
         // Start at top-left corner
         frame.style.left = '0px';
         frame.style.top = '0px';
         paper.appendChild(frame);
         makeDraggable(frame);
 
-        // Add a new row to the tracker table with a delete button
+        // Add a new row to the tracker table with a delete button.
+        // The row displays the original values and the selected unit.
         const row = document.createElement('tr');
         row.id = frameId + '-row';
         row.innerHTML = `
       <td>${frameId}</td>
-      <td>${frameWidth}</td>
-      <td>${frameHeight}</td>
+      <td>${frameWidthInput}</td>
+      <td>${frameHeightInput}</td>
+      <td>${frameUnit}</td>
       <td><button class="delete-btn" data-frame-id="${frameId}">Delete</button></td>
     `;
         frameList.appendChild(row);
 
         // Attach event listener to the delete button
-        row.querySelector('.delete-btn').addEventListener('click', (e) => {
+        row.querySelector('.delete-btn').addEventListener('click', () => {
             deleteFrame(frameId);
         });
     });
@@ -248,7 +313,7 @@
         frameCount = 0;
     });
 
-    // Basic drag functionality
+    // Basic drag functionality for frames
     function makeDraggable(element) {
         let initialX, initialY;
         element.addEventListener('mousedown', dragStart);
@@ -279,6 +344,7 @@
 </script>
 </body>
 </html>
+
 
 
 
