@@ -105,6 +105,23 @@
         #frameTracker th {
             background-color: #f0f0f0;
         }
+        .delete-btn {
+            background: #dc3545;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s ease;
+        }
+        .delete-btn:hover {
+            background: #c82333;
+        }
+        #deleteAllFrames {
+            margin-bottom: 10px;
+            background: #dc3545;
+        }
     </style>
 </head>
 <body>
@@ -141,12 +158,14 @@
 <!-- Frame Tracker Section -->
 <div id="frameTracker">
     <h2>Frame Tracker</h2>
+    <button id="deleteAllFrames">Delete All Frames</button>
     <table>
         <thead>
         <tr>
             <th>ID</th>
             <th>Width (px)</th>
             <th>Height (px)</th>
+            <th>Actions</th>
         </tr>
         </thead>
         <tbody id="frameList">
@@ -187,20 +206,51 @@
         paper.appendChild(frame);
         makeDraggable(frame);
 
-        // Add a new row to the tracker table
+        // Add a new row to the tracker table with a delete button
         const row = document.createElement('tr');
         row.id = frameId + '-row';
         row.innerHTML = `
       <td>${frameId}</td>
       <td>${frameWidth}</td>
       <td>${frameHeight}</td>
+      <td><button class="delete-btn" data-frame-id="${frameId}">Delete</button></td>
     `;
         frameList.appendChild(row);
+
+        // Attach event listener to the delete button
+        row.querySelector('.delete-btn').addEventListener('click', (e) => {
+            deleteFrame(frameId);
+        });
+    });
+
+    // Delete a specific frame
+    function deleteFrame(frameId) {
+        // Remove the frame element from the paper
+        const frame = document.getElementById(frameId);
+        if (frame) {
+            paper.removeChild(frame);
+        }
+        // Remove the corresponding row from the tracker table
+        const row = document.getElementById(frameId + '-row');
+        if (row) {
+            frameList.removeChild(row);
+        }
+    }
+
+    // Delete all frames
+    document.getElementById('deleteAllFrames').addEventListener('click', () => {
+        // Remove all frame elements from the paper
+        while (paper.firstChild) {
+            paper.removeChild(paper.firstChild);
+        }
+        // Clear the tracker table
+        frameList.innerHTML = '';
+        frameCount = 0;
     });
 
     // Basic drag functionality
     function makeDraggable(element) {
-        let offsetX = 0, offsetY = 0, initialX, initialY;
+        let initialX, initialY;
         element.addEventListener('mousedown', dragStart);
         document.addEventListener('mouseup', dragEnd);
         document.addEventListener('mousemove', drag);
@@ -229,6 +279,7 @@
 </script>
 </body>
 </html>
+
 
 
 
