@@ -1,13 +1,110 @@
 <!DOCTYPE html>
-<html lang="">
-  <head>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
-    <link rel="icon" href="/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vite App</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Paper Layout Organizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #fafafa;
+        }
+        #controls {
+            margin-bottom: 20px;
+        }
+        label {
+            margin-right: 10px;
+        }
+        #paper {
+            position: relative;
+            background: #f0f0f0;
+            margin: 0 auto;
+            border: 2px solid #ccc;
+        }
+        .frame {
+            position: absolute;
+            border: 2px solid #007BFF;
+            background: rgba(0, 123, 255, 0.1);
+            box-sizing: border-box;
+            cursor: move;
+        }
+    </style>
+</head>
+<body>
+
+<div id="controls">
+    <h2>Paper Settings</h2>
+    <label>Paper Width: <input type="number" id="paperWidth" value="800"></label>
+    <label>Paper Height: <input type="number" id="paperHeight" value="600"></label>
+    <button id="setPaperSize">Set Paper Size</button>
+    <br><br>
+    <h2>Frame Settings</h2>
+    <label>Frame Width: <input type="number" id="frameWidth" value="100"></label>
+    <label>Frame Height: <input type="number" id="frameHeight" value="100"></label>
+    <button id="addFrame">Add Frame</button>
+</div>
+
+<div id="paper" style="width:800px; height:600px;"></div>
+
+<script>
+    const paper = document.getElementById('paper');
+
+    // Set the paper size based on user input
+    document.getElementById('setPaperSize').addEventListener('click', () => {
+        const width = document.getElementById('paperWidth').value;
+        const height = document.getElementById('paperHeight').value;
+        paper.style.width = width + 'px';
+        paper.style.height = height + 'px';
+    });
+
+    // Add a new frame to the paper
+    document.getElementById('addFrame').addEventListener('click', () => {
+        const frameWidth = document.getElementById('frameWidth').value;
+        const frameHeight = document.getElementById('frameHeight').value;
+        const frame = document.createElement('div');
+        frame.classList.add('frame');
+        frame.style.width = frameWidth + 'px';
+        frame.style.height = frameHeight + 'px';
+        // Start at top-left corner
+        frame.style.left = '0px';
+        frame.style.top = '0px';
+        paper.appendChild(frame);
+        makeDraggable(frame);
+    });
+
+    // Basic drag functionality
+    function makeDraggable(element) {
+        let offsetX = 0, offsetY = 0, initialX, initialY;
+        element.addEventListener('mousedown', dragStart);
+        document.addEventListener('mouseup', dragEnd);
+        document.addEventListener('mousemove', drag);
+
+        function dragStart(e) {
+            // Calculate the offset from the element's top-left corner to the click point
+            initialX = e.clientX - parseInt(element.style.left, 10);
+            initialY = e.clientY - parseInt(element.style.top, 10);
+            element.classList.add('dragging');
+            // Bring the element to the front
+            element.style.zIndex = 1000;
+        }
+
+        function drag(e) {
+            if (element.classList.contains('dragging')) {
+                const x = e.clientX - initialX;
+                const y = e.clientY - initialY;
+                element.style.left = x + 'px';
+                element.style.top = y + 'px';
+            }
+        }
+
+        function dragEnd() {
+            element.classList.remove('dragging');
+            element.style.zIndex = '';
+        }
+    }
+</script>
+</body>
 </html>
+
