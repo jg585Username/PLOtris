@@ -124,9 +124,16 @@
         .delete-btn:hover {
             background: #c82333;
         }
-        #deleteAllFrames {
+        #deleteAllFrames,
+        #undoAction {
             margin-bottom: 10px;
             background: #dc3545;
+        }
+        #undoAction {
+            background: #6c757d;
+        }
+        #undoAction:hover {
+            background: #5a6268;
         }
         .scale-info {
             font-size: 12px;
@@ -183,6 +190,7 @@
             <span id="frameScaleInfo" class="scale-info"></span>
         </div>
         <button id="addFrame">Add Frame</button>
+        <button id="undoAction">Undo Last Frame</button>
     </div>
 </div>
 
@@ -234,6 +242,7 @@
     const paper = document.getElementById('paper');
     const frameList = document.getElementById('frameList');
     let frameCount = 0;
+    let frameHistory = [];  // History stack to track frame insertions
 
     // Set the paper size based on user input and chosen unit
     document.getElementById('setPaperSize').addEventListener('click', () => {
@@ -269,6 +278,9 @@
         paper.appendChild(frame);
         makeDraggable(frame);
 
+        // Push frame ID onto history stack
+        frameHistory.push(frameId);
+
         // Add a new row to the tracker table with a delete button.
         // The row displays the original values and the selected unit.
         const row = document.createElement('tr');
@@ -300,6 +312,8 @@
         if (row) {
             frameList.removeChild(row);
         }
+        // Remove the frame from history if it exists there
+        frameHistory = frameHistory.filter(id => id !== frameId);
     }
 
     // Delete all frames
@@ -308,9 +322,22 @@
         while (paper.firstChild) {
             paper.removeChild(paper.firstChild);
         }
-        // Clear the tracker table
+        // Clear the tracker table and history
         frameList.innerHTML = '';
+        frameHistory = [];
         frameCount = 0;
+    });
+
+    // Undo the last inserted frame
+    document.getElementById('undoAction').addEventListener('click', () => {
+        if (frameHistory.length > 0) {
+            // Get the most recent frame ID
+            const lastFrameId = frameHistory.pop();
+            // Delete the frame if it exists
+            deleteFrame(lastFrameId);
+        } else {
+            alert('No actions to undo.');
+        }
     });
 
     // Basic drag functionality for frames
@@ -344,6 +371,7 @@
 </script>
 </body>
 </html>
+
 
 
 
