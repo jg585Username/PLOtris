@@ -87,7 +87,6 @@
             box-sizing: border-box;
             cursor: move;
             transition: box-shadow 0.2s ease;
-            /* Ensure transform origin is center */
             transform-origin: center;
         }
         .frame.dragging {
@@ -315,10 +314,7 @@
         const rotateValue = row.querySelector('.rotate-value');
         rotateSlider.addEventListener('input', (e) => {
             const angle = e.target.value;
-            // Update the frame's CSS transform.
-            // Preserve translation (left/top) if needed by appending rotation.
             frame.style.transform = `rotate(${angle}deg)`;
-            // Update the text display
             rotateValue.textContent = `${angle}°`;
         });
     });
@@ -356,26 +352,40 @@
         }
     });
 
-    // Basic drag functionality for frames
+    // Basic drag functionality for frames with boundary constraints
     function makeDraggable(element) {
         let initialX, initialY;
         element.addEventListener('mousedown', dragStart);
         document.addEventListener('mouseup', dragEnd);
         document.addEventListener('mousemove', drag);
+
         function dragStart(e) {
             initialX = e.clientX - parseInt(element.style.left, 10);
             initialY = e.clientY - parseInt(element.style.top, 10);
             element.classList.add('dragging');
             element.style.zIndex = 1000;
         }
+
         function drag(e) {
             if (element.classList.contains('dragging')) {
-                const x = e.clientX - initialX;
-                const y = e.clientY - initialY;
-                element.style.left = x + 'px';
-                element.style.top = y + 'px';
+                // Calculate new X and Y based on mouse movement
+                let newX = e.clientX - initialX;
+                let newY = e.clientY - initialY;
+
+                // Constrain the frame within the paper's boundaries
+                const parentWidth = paper.clientWidth;
+                const parentHeight = paper.clientHeight;
+                const frameWidth = element.offsetWidth;
+                const frameHeight = element.offsetHeight;
+
+                newX = Math.max(0, Math.min(newX, parentWidth - frameWidth));
+                newY = Math.max(0, Math.min(newY, parentHeight - frameHeight));
+
+                element.style.left = newX + 'px';
+                element.style.top = newY + 'px';
             }
         }
+
         function dragEnd() {
             element.classList.remove('dragging');
             element.style.zIndex = '';
@@ -384,6 +394,7 @@
 </script>
 </body>
 </html>
+
 
 
 
