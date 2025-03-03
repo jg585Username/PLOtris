@@ -66,7 +66,7 @@
         }
         #paper {
             position: relative;
-            margin: 0 auto;
+            margin: 0 auto 20px auto;
             background: var(--paper-background);
             border: 2px solid #ddd;
             border-radius: 8px;
@@ -84,6 +84,26 @@
         }
         .frame.dragging {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        /* Frame Tracker styling */
+        #frameTracker {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        #frameTracker table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #frameTracker th,
+        #frameTracker td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        #frameTracker th {
+            background-color: #f0f0f0;
         }
     </style>
 </head>
@@ -118,8 +138,27 @@
 
 <div id="paper" style="width:800px; height:600px;"></div>
 
+<!-- Frame Tracker Section -->
+<div id="frameTracker">
+    <h2>Frame Tracker</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Width (px)</th>
+            <th>Height (px)</th>
+        </tr>
+        </thead>
+        <tbody id="frameList">
+        <!-- Frame rows will be added here -->
+        </tbody>
+    </table>
+</div>
+
 <script>
     const paper = document.getElementById('paper');
+    const frameList = document.getElementById('frameList');
+    let frameCount = 0;
 
     // Set the paper size based on user input
     document.getElementById('setPaperSize').addEventListener('click', () => {
@@ -129,12 +168,17 @@
         paper.style.height = height + 'px';
     });
 
-    // Add a new frame to the paper
+    // Add a new frame to the paper and update the tracker
     document.getElementById('addFrame').addEventListener('click', () => {
         const frameWidth = document.getElementById('frameWidth').value;
         const frameHeight = document.getElementById('frameHeight').value;
+        frameCount++;
+        const frameId = 'frame-' + frameCount;
+
+        // Create the frame element
         const frame = document.createElement('div');
         frame.classList.add('frame');
+        frame.id = frameId;
         frame.style.width = frameWidth + 'px';
         frame.style.height = frameHeight + 'px';
         // Start at top-left corner
@@ -142,6 +186,16 @@
         frame.style.top = '0px';
         paper.appendChild(frame);
         makeDraggable(frame);
+
+        // Add a new row to the tracker table
+        const row = document.createElement('tr');
+        row.id = frameId + '-row';
+        row.innerHTML = `
+      <td>${frameId}</td>
+      <td>${frameWidth}</td>
+      <td>${frameHeight}</td>
+    `;
+        frameList.appendChild(row);
     });
 
     // Basic drag functionality
@@ -175,5 +229,6 @@
 </script>
 </body>
 </html>
+
 
 
