@@ -206,6 +206,15 @@
         <button id="addFrame">Add Frame</button>
         <button id="undoAction">Undo Last Frame</button>
     </div>
+    <!-- Organize Section -->
+    <div>
+        <h2>Organize</h2>
+        <div>
+            <label for="marginInput">Margin (px):</label>
+            <input type="number" id="marginInput" value="10">
+        </div>
+        <button id="organizeBtn">Organize</button>
+    </div>
 </div>
 
 <div id="paper" style="width:800px; height:600px;"></div>
@@ -298,7 +307,7 @@
         }
     }
 
-    // Set the paper size based on user input and chosen unit
+    // Set paper size based on user input and chosen unit
     document.getElementById('setPaperSize').addEventListener('click', () => {
         const paperWidthInput = document.getElementById('paperWidth').value;
         const paperHeightInput = document.getElementById('paperHeight').value;
@@ -350,14 +359,14 @@
     `;
         frameList.appendChild(row);
 
-        // Attach event listener to the delete button using function() so 'this' refers to the button
+        // Attach event listener to the delete button using a function to read the current data attribute
         const deleteBtn = row.querySelector('.delete-btn');
         deleteBtn.addEventListener('click', function() {
             const currentFrameId = this.getAttribute('data-frame-id');
             deleteFrame(currentFrameId);
         });
 
-        // Attach event listener to the rotation slider
+        // Attach event listener to the rotation slider to update frame rotation
         const rotateSlider = row.querySelector('.rotate-slider');
         const rotateValue = row.querySelector('.rotate-value');
         rotateSlider.addEventListener('input', (e) => {
@@ -376,7 +385,6 @@
                 this.textContent = uniqueId;
                 updateFrameId(oldId, uniqueId);
             } else if (!newIdCandidate) {
-                // Revert if empty
                 this.textContent = oldId;
             }
         });
@@ -415,6 +423,54 @@
         }
     });
 
+    // Organize frames: position them with the specified margin and resize the paper to the minimal bounding box.
+    document.getElementById('organizeBtn').addEventListener('click', organizeFrames);
+
+    function organizeFrames() {
+        // Read margin value (in px)
+        const margin = parseInt(document.getElementById('marginInput').value) || 0;
+
+        // Gather all frame elements into an array along with their dimensions
+        const frameElements = Array.from(paper.getElementsByClassName('frame'));
+        const frames = frameElements.map(frame => {
+            // Parse numeric width and height from style (assuming they end with "px")
+            const width = parseInt(frame.style.width, 10);
+            const height = parseInt(frame.style.height, 10);
+            return { element: frame, width, height };
+        });
+
+        // Calculate total area to estimate a target paper width
+        const totalArea = frames.reduce((sum, f) => sum + (f.width * f.height), 0);
+        let targetWidth = Math.ceil(Math.sqrt(totalArea)) + margin * 2;
+
+        // Arrange frames row-by-row
+        let currentX = margin;
+        let currentY = margin;
+        let rowHeight = 0;
+        let maxX = 0;
+        frames.forEach(f => {
+            // If adding this frame would exceed targetWidth, start a new row
+            if (currentX + f.width + margin > targetWidth) {
+                currentY += rowHeight + margin;
+                currentX = margin;
+                rowHeight = 0;
+            }
+            // Place the frame at (currentX, currentY)
+            f.element.style.left = currentX + "px";
+            f.element.style.top = currentY + "px";
+
+            currentX += f.width + margin;
+            rowHeight = Math.max(rowHeight, f.height);
+            maxX = Math.max(maxX, currentX);
+        });
+
+        // Compute new paper dimensions
+        const newPaperWidth = maxX;
+        const newPaperHeight = currentY + rowHeight + margin;
+        paper.style.width = newPaperWidth + "px";
+        paper.style.height = newPaperHeight + "px";
+    }
+
     // Basic drag functionality with boundary constraints
     function makeDraggable(element) {
         let initialX, initialY;
@@ -452,6 +508,7 @@
 </script>
 </body>
 </html>
+
 
 
 
