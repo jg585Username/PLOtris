@@ -87,6 +87,8 @@
             box-sizing: border-box;
             cursor: move;
             transition: box-shadow 0.2s ease;
+            /* Ensure transform origin is center */
+            transform-origin: center;
         }
         .frame.dragging {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -138,6 +140,13 @@
         .scale-info {
             font-size: 12px;
             color: #555;
+            margin-left: 5px;
+        }
+        .rotate-slider {
+            width: 100px;
+        }
+        .rotate-value {
+            font-size: 12px;
             margin-left: 5px;
         }
     </style>
@@ -207,6 +216,7 @@
             <th>Width</th>
             <th>Height</th>
             <th>Unit</th>
+            <th>Rotation</th>
             <th>Actions</th>
         </tr>
         </thead>
@@ -250,8 +260,6 @@
         const paperHeightInput = document.getElementById('paperHeight').value;
         const paperUnit = document.getElementById('paperUnit').value;
         const factor = conversionFactors[paperUnit];
-
-        // Convert input value to pixels based on the factor
         paper.style.width = (paperWidthInput * factor) + 'px';
         paper.style.height = (paperHeightInput * factor) + 'px';
     });
@@ -266,23 +274,22 @@
         frameCount++;
         const frameId = 'frame-' + frameCount;
 
-        // Create the frame element and set its size (converted to px)
+        // Create the frame element, set size and initial rotation (0deg)
         const frame = document.createElement('div');
         frame.classList.add('frame');
         frame.id = frameId;
         frame.style.width = (frameWidthInput * factor) + 'px';
         frame.style.height = (frameHeightInput * factor) + 'px';
-        // Start at top-left corner
         frame.style.left = '0px';
         frame.style.top = '0px';
+        frame.style.transform = 'rotate(0deg)';  // initial rotation
         paper.appendChild(frame);
         makeDraggable(frame);
 
         // Push frame ID onto history stack
         frameHistory.push(frameId);
 
-        // Add a new row to the tracker table with a delete button.
-        // The row displays the original values and the selected unit.
+        // Add a new row to the tracker table with a delete button and rotation slider.
         const row = document.createElement('tr');
         row.id = frameId + '-row';
         row.innerHTML = `
@@ -290,39 +297,50 @@
       <td>${frameWidthInput}</td>
       <td>${frameHeightInput}</td>
       <td>${frameUnit}</td>
+      <td>
+        <input type="range" min="0" max="360" value="0" data-frame-id="${frameId}" class="rotate-slider">
+        <span class="rotate-value">0°</span>
+      </td>
       <td><button class="delete-btn" data-frame-id="${frameId}">Delete</button></td>
     `;
         frameList.appendChild(row);
 
-        // Attach event listener to the delete button
+        // Attach event listener to the delete button for this frame
         row.querySelector('.delete-btn').addEventListener('click', () => {
             deleteFrame(frameId);
         });
+
+        // Attach event listener to the rotation slider to update the frame's rotation.
+        const rotateSlider = row.querySelector('.rotate-slider');
+        const rotateValue = row.querySelector('.rotate-value');
+        rotateSlider.addEventListener('input', (e) => {
+            const angle = e.target.value;
+            // Update the frame's CSS transform.
+            // Preserve translation (left/top) if needed by appending rotation.
+            frame.style.transform = `rotate(${angle}deg)`;
+            // Update the text display
+            rotateValue.textContent = `${angle}°`;
+        });
     });
 
-    // Delete a specific frame
+    // Delete a specific frame and update history
     function deleteFrame(frameId) {
-        // Remove the frame element from the paper
         const frame = document.getElementById(frameId);
         if (frame) {
             paper.removeChild(frame);
         }
-        // Remove the corresponding row from the tracker table
         const row = document.getElementById(frameId + '-row');
         if (row) {
             frameList.removeChild(row);
         }
-        // Remove the frame from history if it exists there
         frameHistory = frameHistory.filter(id => id !== frameId);
     }
 
-    // Delete all frames
+    // Delete all frames and clear history
     document.getElementById('deleteAllFrames').addEventListener('click', () => {
-        // Remove all frame elements from the paper
         while (paper.firstChild) {
             paper.removeChild(paper.firstChild);
         }
-        // Clear the tracker table and history
         frameList.innerHTML = '';
         frameHistory = [];
         frameCount = 0;
@@ -331,9 +349,7 @@
     // Undo the last inserted frame
     document.getElementById('undoAction').addEventListener('click', () => {
         if (frameHistory.length > 0) {
-            // Get the most recent frame ID
             const lastFrameId = frameHistory.pop();
-            // Delete the frame if it exists
             deleteFrame(lastFrameId);
         } else {
             alert('No actions to undo.');
@@ -346,14 +362,12 @@
         element.addEventListener('mousedown', dragStart);
         document.addEventListener('mouseup', dragEnd);
         document.addEventListener('mousemove', drag);
-
         function dragStart(e) {
             initialX = e.clientX - parseInt(element.style.left, 10);
             initialY = e.clientY - parseInt(element.style.top, 10);
             element.classList.add('dragging');
             element.style.zIndex = 1000;
         }
-
         function drag(e) {
             if (element.classList.contains('dragging')) {
                 const x = e.clientX - initialX;
@@ -362,7 +376,6 @@
                 element.style.top = y + 'px';
             }
         }
-
         function dragEnd() {
             element.classList.remove('dragging');
             element.style.zIndex = '';
@@ -371,6 +384,7 @@
 </script>
 </body>
 </html>
+
 
 
 
