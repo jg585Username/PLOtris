@@ -210,8 +210,15 @@
     <div>
         <h2>Organize</h2>
         <div>
-            <label for="marginInput">Margin (px):</label>
+            <label for="marginInput">Margin:</label>
             <input type="number" id="marginInput" value="10">
+            <select id="marginUnit">
+                <option value="px" selected>px</option>
+                <option value="cm">cm</option>
+                <option value="mm">mm</option>
+                <option value="inch">inch</option>
+            </select>
+            <span id="marginScaleInfo" class="scale-info"></span>
         </div>
         <button id="organizeBtn">Organize</button>
     </div>
@@ -249,16 +256,22 @@
         'inch': 25   // 1 inch = 25 px on screen
     };
 
-    // Update scale info displays for paper and frame units
+    // Update scale info displays for paper, frame, and margin units
     function updateScaleInfo() {
         const paperUnit = document.getElementById('paperUnit').value;
         const frameUnit = document.getElementById('frameUnit').value;
         document.getElementById('paperScaleInfo').textContent = `Scale: 1 ${paperUnit} = ${conversionFactors[paperUnit]} px`;
         document.getElementById('frameScaleInfo').textContent = `Scale: 1 ${frameUnit} = ${conversionFactors[frameUnit]} px`;
     }
+    function updateMarginScaleInfo() {
+        const marginUnit = document.getElementById('marginUnit').value;
+        document.getElementById('marginScaleInfo').textContent = `Scale: 1 ${marginUnit} = ${conversionFactors[marginUnit]} px`;
+    }
     updateScaleInfo();
+    updateMarginScaleInfo();
     document.getElementById('paperUnit').addEventListener('change', updateScaleInfo);
     document.getElementById('frameUnit').addEventListener('change', updateScaleInfo);
+    document.getElementById('marginUnit').addEventListener('change', updateMarginScaleInfo);
 
     const paper = document.getElementById('paper');
     const frameList = document.getElementById('frameList');
@@ -359,7 +372,7 @@
     `;
         frameList.appendChild(row);
 
-        // Attach event listener to the delete button using a function to read the current data attribute
+        // Attach event listener to the delete button so it always reads the current frame ID
         const deleteBtn = row.querySelector('.delete-btn');
         deleteBtn.addEventListener('click', function() {
             const currentFrameId = this.getAttribute('data-frame-id');
@@ -423,48 +436,46 @@
         }
     });
 
-    // Organize frames: position them with the specified margin and resize the paper to the minimal bounding box.
+    // Organize frames: arrange them with the specified margin and resize the paper to the minimal bounding box.
     document.getElementById('organizeBtn').addEventListener('click', organizeFrames);
 
     function organizeFrames() {
-        // Read margin value (in px)
-        const margin = parseInt(document.getElementById('marginInput').value) || 0;
+        // Read margin value and unit, then convert to pixels
+        const marginInputVal = parseFloat(document.getElementById('marginInput').value) || 0;
+        const marginUnit = document.getElementById('marginUnit').value;
+        const margin = marginInputVal * conversionFactors[marginUnit];
 
-        // Gather all frame elements into an array along with their dimensions
+        // Gather all frame elements and their dimensions
         const frameElements = Array.from(paper.getElementsByClassName('frame'));
         const frames = frameElements.map(frame => {
-            // Parse numeric width and height from style (assuming they end with "px")
             const width = parseInt(frame.style.width, 10);
             const height = parseInt(frame.style.height, 10);
             return { element: frame, width, height };
         });
 
-        // Calculate total area to estimate a target paper width
+        // Estimate a target paper width based on total area and add margins
         const totalArea = frames.reduce((sum, f) => sum + (f.width * f.height), 0);
         let targetWidth = Math.ceil(Math.sqrt(totalArea)) + margin * 2;
 
-        // Arrange frames row-by-row
+        // Place frames row-by-row with margins
         let currentX = margin;
         let currentY = margin;
         let rowHeight = 0;
         let maxX = 0;
         frames.forEach(f => {
-            // If adding this frame would exceed targetWidth, start a new row
             if (currentX + f.width + margin > targetWidth) {
                 currentY += rowHeight + margin;
                 currentX = margin;
                 rowHeight = 0;
             }
-            // Place the frame at (currentX, currentY)
             f.element.style.left = currentX + "px";
             f.element.style.top = currentY + "px";
-
             currentX += f.width + margin;
             rowHeight = Math.max(rowHeight, f.height);
             maxX = Math.max(maxX, currentX);
         });
 
-        // Compute new paper dimensions
+        // Resize paper to the minimal bounding box containing all frames
         const newPaperWidth = maxX;
         const newPaperHeight = currentY + rowHeight + margin;
         paper.style.width = newPaperWidth + "px";
@@ -508,6 +519,7 @@
 </script>
 </body>
 </html>
+
 
 
 
