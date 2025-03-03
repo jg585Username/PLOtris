@@ -4,46 +4,116 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Paper Layout Organizer</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #007BFF;
+            --background-color: #f7f9fc;
+            --paper-background: #ffffff;
+            --frame-background: rgba(0, 123, 255, 0.1);
+            --text-color: #333;
+        }
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', sans-serif;
+            background: var(--background-color);
             margin: 0;
             padding: 20px;
-            background: #fafafa;
+            color: var(--text-color);
+        }
+        h2 {
+            margin: 0 0 10px;
         }
         #controls {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            align-items: flex-start;
+        }
+        #controls > div {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
         label {
-            margin-right: 10px;
+            font-weight: 500;
+            margin-right: 5px;
+        }
+        input[type="number"] {
+            padding: 6px 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100px;
+        }
+        button {
+            padding: 8px 15px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            background: var(--primary-color);
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            align-self: flex-start;
+        }
+        button:hover {
+            background: #0056b3;
         }
         #paper {
             position: relative;
-            background: #f0f0f0;
             margin: 0 auto;
-            border: 2px solid #ccc;
+            background: var(--paper-background);
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
         }
         .frame {
             position: absolute;
-            border: 2px solid #007BFF;
-            background: rgba(0, 123, 255, 0.1);
+            border: 2px solid var(--primary-color);
+            background: var(--frame-background);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
             box-sizing: border-box;
             cursor: move;
+            transition: box-shadow 0.2s ease;
+        }
+        .frame.dragging {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
     </style>
 </head>
 <body>
 
 <div id="controls">
-    <h2>Paper Settings</h2>
-    <label>Paper Width: <input type="number" id="paperWidth" value="800"></label>
-    <label>Paper Height: <input type="number" id="paperHeight" value="600"></label>
-    <button id="setPaperSize">Set Paper Size</button>
-    <br><br>
-    <h2>Frame Settings</h2>
-    <label>Frame Width: <input type="number" id="frameWidth" value="100"></label>
-    <label>Frame Height: <input type="number" id="frameHeight" value="100"></label>
-    <button id="addFrame">Add Frame</button>
+    <div>
+        <h2>Paper Settings</h2>
+        <div>
+            <label for="paperWidth">Width:</label>
+            <input type="number" id="paperWidth" value="800">
+        </div>
+        <div>
+            <label for="paperHeight">Height:</label>
+            <input type="number" id="paperHeight" value="600">
+        </div>
+        <button id="setPaperSize">Apply</button>
+    </div>
+    <div>
+        <h2>Frame Settings</h2>
+        <div>
+            <label for="frameWidth">Width:</label>
+            <input type="number" id="frameWidth" value="100">
+        </div>
+        <div>
+            <label for="frameHeight">Height:</label>
+            <input type="number" id="frameHeight" value="100">
+        </div>
+        <button id="addFrame">Add Frame</button>
+    </div>
 </div>
 
 <div id="paper" style="width:800px; height:600px;"></div>
@@ -82,11 +152,9 @@
         document.addEventListener('mousemove', drag);
 
         function dragStart(e) {
-            // Calculate the offset from the element's top-left corner to the click point
             initialX = e.clientX - parseInt(element.style.left, 10);
             initialY = e.clientY - parseInt(element.style.top, 10);
             element.classList.add('dragging');
-            // Bring the element to the front
             element.style.zIndex = 1000;
         }
 
@@ -107,4 +175,5 @@
 </script>
 </body>
 </html>
+
 
