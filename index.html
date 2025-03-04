@@ -27,7 +27,7 @@
             background: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             display: flex;
             flex-wrap: wrap;
@@ -75,28 +75,29 @@
             background: var(--paper-background);
             border: 2px solid #ddd;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             overflow: hidden;
         }
+        /* Use top left as transform origin to avoid clipping after rotations */
         .frame {
             position: absolute;
             border: 2px solid var(--primary-color);
             background: var(--frame-background);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             box-sizing: border-box;
             cursor: move;
             transition: box-shadow 0.2s ease;
             transform-origin: center;
         }
         .frame.dragging {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         /* Frame Tracker styling */
         #frameTracker {
             background: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         #frameTracker table {
             width: 100%;
@@ -149,6 +150,17 @@
         .rotate-value {
             font-size: 12px;
             margin-left: 5px;
+        }
+        /* New: Paper size output box */
+        #paperSizeOutput {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #333;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            background: #fff;
         }
     </style>
 </head>
@@ -227,6 +239,8 @@
             </label>
         </div>
         <button id="organizeBtn">Organize</button>
+        <!-- New: Paper size output box -->
+        <div id="paperSizeOutput"></div>
     </div>
 </div>
 
@@ -257,9 +271,9 @@
     // Conversion factors for scaling down from real size to screen size
     const conversionFactors = {
         px: 1,
-        cm: 10, // 1 cm = 10 px on screen
-        mm: 1,  // 1 mm = 1 px on screen
-        inch: 25 // 1 inch = 25 px on screen
+        cm: 10,    // 1 cm = 10 px on screen
+        mm: 1,     // 1 mm = 1 px on screen
+        inch: 25   // 1 inch = 25 px on screen
     };
 
     // Update scale info displays for paper, frame, and margin units
@@ -444,20 +458,18 @@
         // Determine if rotation is allowed for packing.
         const allowRotation = document.getElementById("allowRotation").checked;
 
-        // Gather frame elements and parse their dimensions (from style, in px).
+        // Gather frame elements and their original dimensions.
         const frameElements = Array.from(paper.getElementsByClassName("frame"));
-        // For each frame, store its original width and height.
         const frames = frameElements.map((frame) => {
             const width = parseInt(frame.style.width, 10);
             const height = parseInt(frame.style.height, 10);
             return { element: frame, origWidth: width, origHeight: height };
         });
 
-        // Estimate target paper width based on total area (plus margins).
+        // Estimate target paper width based on total area plus margins.
         const totalArea = frames.reduce((sum, f) => sum + f.origWidth * f.origHeight, 0);
         let targetWidth = Math.ceil(Math.sqrt(totalArea)) + margin * 2;
 
-        // Place frames row-by-row.
         let currentX = margin;
         let currentY = margin;
         let rowHeight = 0;
@@ -468,20 +480,17 @@
                 origH = f.origHeight;
             let usedW = origW,
                 usedH = origH;
-            let appliedRotation = 0; // in degrees
+            let appliedRotation = 0; // degrees
 
             if (allowRotation) {
-                // Check both orientations:
+                // Check if rotated orientation would fit better.
                 const normalFits = currentX + origW + margin <= targetWidth;
                 const rotatedFits = currentX + origH + margin <= targetWidth;
-                // If normal orientation doesn't fit but rotated does, then rotate.
                 if (!normalFits && rotatedFits) {
                     usedW = origH;
                     usedH = origW;
                     appliedRotation = 90;
-                }
-                // If both fit, choose the orientation that minimizes row height.
-                else if (normalFits && rotatedFits) {
+                } else if (normalFits && rotatedFits) {
                     const option1RowHeight = Math.max(rowHeight, origH);
                     const option2RowHeight = Math.max(rowHeight, origW);
                     if (option2RowHeight < option1RowHeight) {
@@ -490,23 +499,29 @@
                         appliedRotation = 90;
                     }
                 }
-                // Otherwise, keep normal orientation.
             }
 
-            // If adding the current frame would exceed targetWidth, start a new row.
             if (currentX + usedW + margin > targetWidth) {
                 currentY += rowHeight + margin;
                 currentX = margin;
                 rowHeight = 0;
             }
+
             // Place the frame.
             f.element.style.left = currentX + "px";
             f.element.style.top = currentY + "px";
-            // Apply rotation if needed.
             if (appliedRotation) {
                 f.element.style.transform = `rotate(${appliedRotation}deg)`;
+                // Update the frame's dimensions to the effective ones.
+                f.element.style.width = usedW + "px";
+                f.element.style.height = usedH + "px";
+                // Update tracker row.
+                const row = document.getElementById(f.element.id + "-row");
+                if (row) {
+                    row.cells[1].textContent = usedW;
+                    row.cells[2].textContent = usedH;
+                }
             } else {
-                // Retain its current rotation (or set to 0 for organizing).
                 f.element.style.transform = "rotate(0deg)";
             }
             currentX += usedW + margin;
@@ -514,11 +529,14 @@
             maxX = Math.max(maxX, currentX);
         });
 
-        // Resize the paper to the minimal bounding box containing all frames.
         const newPaperWidth = maxX;
         const newPaperHeight = currentY + rowHeight + margin;
         paper.style.width = newPaperWidth + "px";
         paper.style.height = newPaperHeight + "px";
+
+        // Update the paper size output box.
+        const paperSizeOutput = document.getElementById("paperSizeOutput");
+        paperSizeOutput.textContent = `Paper Size: ${newPaperWidth}px x ${newPaperHeight}px`;
     }
 
     // Basic drag functionality with boundary constraints.
@@ -558,6 +576,7 @@
 </script>
 </body>
 </html>
+
 
 
 
