@@ -175,19 +175,19 @@
         <h2>Paper Settings</h2>
         <div>
             <label for="paperWidth">Width:</label>
-            <input type="number" id="paperWidth" value="800" />
+            <input type="number" id="paperWidth" value="32" />
         </div>
         <div>
             <label for="paperHeight">Height:</label>
-            <input type="number" id="paperHeight" value="600" />
+            <input type="number" id="paperHeight" value="24" />
         </div>
         <div>
             <label for="paperUnit">Unit:</label>
             <select id="paperUnit">
-                <option value="px" selected>px</option>
+                <option value="px" >px</option>
                 <option value="cm">cm</option>
                 <option value="mm">mm</option>
-                <option value="inch">inch</option>
+                <option value="inch" selected>inch</option>
             </select>
             <span id="paperScaleInfo" class="scale-info"></span>
         </div>
@@ -211,10 +211,10 @@
         <div>
             <label for="frameUnit">Unit:</label>
             <select id="frameUnit">
-                <option value="px" selected>px</option>
+                <option value="px" >px</option>
                 <option value="cm">cm</option>
                 <option value="mm">mm</option>
-                <option value="inch">inch</option>
+                <option value="inch" selected>inch</option>
             </select>
             <span id="frameScaleInfo" class="scale-info"></span>
         </div>
@@ -228,10 +228,10 @@
             <label for="marginInput">Margin:</label>
             <input type="number" id="marginInput" value="10" />
             <select id="marginUnit">
-                <option value="px" selected>px</option>
+                <option value="px" >px</option>
                 <option value="cm">cm</option>
                 <option value="mm">mm</option>
-                <option value="inch">inch</option>
+                <option value="inch" selected>inch</option>
             </select>
             <span id="marginScaleInfo" class="scale-info"></span>
         </div>
@@ -271,7 +271,7 @@
 
 <script>
     // Global current unit state; initially "px"
-    let currentUnit = "px";
+    let currentUnit = "inch";
 
     const conversionFactors = {
         px: 1,
