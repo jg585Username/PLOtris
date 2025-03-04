@@ -624,7 +624,9 @@
         paper.style.height = newPaperHeight + "px";
 
         const paperSizeOutput = document.getElementById("paperSizeOutput");
-        paperSizeOutput.textContent = `Paper Size: ${newPaperWidth}px x ${newPaperHeight}px`;
+        const displayedWidth = newPaperWidth / conversionFactors[currentUnit];
+        const displayedHeight = newPaperHeight / conversionFactors[currentUnit];
+        paperSizeOutput.textContent = `Paper Size: ${displayedWidth.toFixed(2)} ${currentUnit} x ${displayedHeight.toFixed(2)} ${currentUnit}`;
     }
 
     function makeDraggable(element) {
