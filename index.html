@@ -27,7 +27,7 @@
             background: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
             display: flex;
             flex-wrap: wrap;
@@ -78,7 +78,8 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             overflow: hidden;
         }
-        /* Use top left as transform origin to avoid clipping after rotations */
+        /* Use center as transform origin for drag but note that for organize we assume top-left.
+           (You might adjust this as needed.) */
         .frame {
             position: absolute;
             border: 2px solid var(--primary-color);
@@ -115,7 +116,6 @@
         .frame-id-cell {
             cursor: text;
         }
-        /* Make width and height cells editable */
         .dim-cell {
             cursor: text;
         }
@@ -270,62 +270,103 @@
 </div>
 
 <script>
-    // Conversion factors for scaling down from real size to screen size
+    // Global current unit state; initially "px"
+    let currentUnit = "px";
+
     const conversionFactors = {
         px: 1,
-        cm: 10,    // 1 cm = 10 px on screen
-        mm: 1,     // 1 mm = 1 px on screen
-        inch: 25   // 1 inch = 25 px on screen
+        cm: 10,
+        mm: 1,
+        inch: 25
     };
 
-    // Update scale info displays for paper, frame, and margin units
+    // Functions to update scale info displays.
     function updateScaleInfo() {
-        const paperUnit = document.getElementById("paperUnit").value;
-        const frameUnit = document.getElementById("frameUnit").value;
-        document.getElementById("paperScaleInfo").textContent = `Scale: 1 ${paperUnit} = ${conversionFactors[paperUnit]} px`;
-        document.getElementById("frameScaleInfo").textContent = `Scale: 1 ${frameUnit} = ${conversionFactors[frameUnit]} px`;
+        document.getElementById("paperScaleInfo").textContent = `Scale: 1 ${currentUnit} = ${conversionFactors[currentUnit]} px`;
+        document.getElementById("frameScaleInfo").textContent = `Scale: 1 ${currentUnit} = ${conversionFactors[currentUnit]} px`;
     }
     function updateMarginScaleInfo() {
-        const marginUnit = document.getElementById("marginUnit").value;
-        document.getElementById("marginScaleInfo").textContent = `Scale: 1 ${marginUnit} = ${conversionFactors[marginUnit]} px`;
+        document.getElementById("marginScaleInfo").textContent = `Scale: 1 ${currentUnit} = ${conversionFactors[currentUnit]} px`;
     }
     updateScaleInfo();
     updateMarginScaleInfo();
-    document.getElementById("paperUnit").addEventListener("change", updateScaleInfo);
-    document.getElementById("frameUnit").addEventListener("change", updateScaleInfo);
-    document.getElementById("marginUnit").addEventListener("change", updateMarginScaleInfo);
+
+    // Sync unit change across all unit selectors and convert dimensions.
+    function syncUnits(newUnit) {
+        if (newUnit === currentUnit) return;
+        const oldUnit = currentUnit;
+        currentUnit = newUnit;
+        // Conversion ratio from old unit to new unit.
+        const ratio = conversionFactors[oldUnit] / conversionFactors[newUnit];
+
+        // Update paper dimensions.
+        const paperWidthInput = document.getElementById("paperWidth");
+        const paperHeightInput = document.getElementById("paperHeight");
+        const oldPaperWidth = parseFloat(paperWidthInput.value);
+        const oldPaperHeight = parseFloat(paperHeightInput.value);
+        const actualPaperWidthPx = oldPaperWidth * conversionFactors[oldUnit];
+        const actualPaperHeightPx = oldPaperHeight * conversionFactors[oldUnit];
+        const newPaperWidthValue = actualPaperWidthPx / conversionFactors[newUnit];
+        const newPaperHeightValue = actualPaperHeightPx / conversionFactors[newUnit];
+        paperWidthInput.value = newPaperWidthValue;
+        paperHeightInput.value = newPaperHeightValue;
+        // Paper element remains in px.
+        paper.style.width = actualPaperWidthPx + "px";
+        paper.style.height = actualPaperHeightPx + "px";
+
+        // Update frame tracker dimensions.
+        const rows = document.querySelectorAll("#frameList tr");
+        rows.forEach(row => {
+            const unitCell = row.cells[3];
+            // Change unit cell to new unit.
+            unitCell.textContent = newUnit;
+            // For width and height, recalc based on stored original pixel dimensions.
+            const frameId = row.id.replace("-row", "");
+            const frameElem = document.getElementById(frameId);
+            if (frameElem) {
+                const origWidthPx = parseFloat(frameElem.dataset.origWidth);
+                const origHeightPx = parseFloat(frameElem.dataset.origHeight);
+                const newWidthDisplayed = origWidthPx / conversionFactors[newUnit];
+                const newHeightDisplayed = origHeightPx / conversionFactors[newUnit];
+                row.cells[1].textContent = newWidthDisplayed;
+                row.cells[2].textContent = newHeightDisplayed;
+            }
+        });
+
+        // Update margin input.
+        const marginInput = document.getElementById("marginInput");
+        const oldMargin = parseFloat(marginInput.value);
+        marginInput.value = oldMargin * ratio; // multiply by ratio to convert
+        // Update all unit selectors to newUnit.
+        document.getElementById("paperUnit").value = newUnit;
+        document.getElementById("frameUnit").value = newUnit;
+        document.getElementById("marginUnit").value = newUnit;
+        updateScaleInfo();
+        updateMarginScaleInfo();
+    }
+
+    // Attach event listeners to unit selectors.
+    document.getElementById("paperUnit").addEventListener("change", function() {
+        syncUnits(this.value);
+    });
+    document.getElementById("frameUnit").addEventListener("change", function() {
+        syncUnits(this.value);
+    });
+    document.getElementById("marginUnit").addEventListener("change", function() {
+        syncUnits(this.value);
+    });
 
     const paper = document.getElementById("paper");
     const frameList = document.getElementById("frameList");
     let frameCount = 0;
-    let frameHistory = []; // Stack for tracking frame insertions
+    let frameHistory = [];
 
-    // Function to restrict input to numbers and at most one period.
-    function allowOnlyNumbers(e) {
-        // Allow control keys (backspace, tab, enter, etc.)
-        if (e.ctrlKey || e.metaKey || e.altKey) return;
-        // Allow navigation keys
-        if (["ArrowLeft", "ArrowRight", "Backspace", "Delete"].indexOf(e.key) !== -1) return;
-        const currentValue = e.target.textContent;
-        // Allow digits
-        if (!/[0-9]/.test(e.key)) {
-            // Allow one dot if not already present
-            if (e.key === "." && currentValue.indexOf(".") === -1) {
-                return;
-            }
-            e.preventDefault();
-        }
+    // Store original dimensions in data attributes.
+    function addFrameDataAttributes(frame, widthPx, heightPx) {
+        frame.dataset.origWidth = widthPx;
+        frame.dataset.origHeight = heightPx;
     }
 
-    // Attach paste event to filter pasted text to numeric characters only.
-    function filterPaste(e) {
-        e.preventDefault();
-        const text = (e.clipboardData || window.clipboardData).getData("text");
-        const filtered = text.replace(/[^0-9.]/g, "");
-        document.execCommand("insertText", false, filtered);
-    }
-
-    // Generate a unique ID given a base name
     function generateUniqueId(base) {
         let id = base;
         let counter = 1;
@@ -336,64 +377,56 @@
         return id;
     }
 
-    // Update all references for a frame when its ID is changed
     function updateFrameId(oldId, newId) {
         const frame = document.getElementById(oldId);
-        if (frame) {
-            frame.id = newId;
-        }
+        if (frame) frame.id = newId;
         const row = document.getElementById(oldId + "-row");
         if (row) {
             row.id = newId + "-row";
             const deleteBtn = row.querySelector(".delete-btn");
-            if (deleteBtn) {
-                deleteBtn.setAttribute("data-frame-id", newId);
-            }
+            if (deleteBtn) deleteBtn.setAttribute("data-frame-id", newId);
             const slider = row.querySelector(".rotate-slider");
-            if (slider) {
-                slider.setAttribute("data-frame-id", newId);
-            }
+            if (slider) slider.setAttribute("data-frame-id", newId);
             const idCell = row.querySelector(".frame-id-cell");
-            if (idCell) {
-                idCell.setAttribute("data-frame-id", newId);
-            }
+            if (idCell) idCell.setAttribute("data-frame-id", newId);
         }
         const index = frameHistory.indexOf(oldId);
-        if (index !== -1) {
-            frameHistory[index] = newId;
-        }
+        if (index !== -1) frameHistory[index] = newId;
     }
 
-    // Set paper size based on user input and chosen unit
     document.getElementById("setPaperSize").addEventListener("click", () => {
         const paperWidthInput = document.getElementById("paperWidth").value;
         const paperHeightInput = document.getElementById("paperHeight").value;
-        const paperUnit = document.getElementById("paperUnit").value;
-        const factor = conversionFactors[paperUnit];
-        paper.style.width = paperWidthInput * factor + "px";
-        paper.style.height = paperHeightInput * factor + "px";
+        // Actual dimensions in pixels remain the same.
+        const actualWidthPx = paperWidthInput * conversionFactors[currentUnit];
+        const actualHeightPx = paperHeightInput * conversionFactors[currentUnit];
+        paper.style.width = actualWidthPx + "px";
+        paper.style.height = actualHeightPx + "px";
     });
 
-    // Add a new frame to the paper and update the tracker
     document.getElementById("addFrame").addEventListener("click", () => {
         const frameNameInput = document.getElementById("frameName").value.trim();
         const frameWidthInput = document.getElementById("frameWidth").value;
         const frameHeightInput = document.getElementById("frameHeight").value;
-        const frameUnit = document.getElementById("frameUnit").value;
-        const factor = conversionFactors[frameUnit];
+        // Use currentUnit for frame dimensions.
+        const factor = conversionFactors[currentUnit];
         frameCount++;
         let baseName = frameNameInput ? frameNameInput : "frame-" + frameCount;
         let frameId = generateUniqueId(baseName);
 
+        const widthPx = frameWidthInput * factor;
+        const heightPx = frameHeightInput * factor;
+
         const frame = document.createElement("div");
         frame.classList.add("frame");
         frame.id = frameId;
-        frame.style.width = frameWidthInput * factor + "px";
-        frame.style.height = frameHeightInput * factor + "px";
+        frame.style.width = widthPx + "px";
+        frame.style.height = heightPx + "px";
         frame.style.left = "0px";
         frame.style.top = "0px";
         frame.style.transform = "rotate(0deg)";
         paper.appendChild(frame);
+        addFrameDataAttributes(frame, widthPx, heightPx);
         makeDraggable(frame);
         frameHistory.push(frameId);
 
@@ -403,7 +436,7 @@
       <td class="frame-id-cell" contenteditable="true" data-frame-id="${frameId}">${frameId}</td>
       <td class="dim-cell">${frameWidthInput}</td>
       <td class="dim-cell">${frameHeightInput}</td>
-      <td>${frameUnit}</td>
+      <td>${currentUnit}</td>
       <td>
         <input type="range" min="0" max="360" value="0" data-frame-id="${frameId}" class="rotate-slider">
         <span class="rotate-value">0°</span>
@@ -427,7 +460,7 @@
         });
 
         const idCell = row.querySelector(".frame-id-cell");
-        idCell.addEventListener("blur", function (e) {
+        idCell.addEventListener("blur", function () {
             const oldId = this.getAttribute("data-frame-id");
             const newIdCandidate = this.textContent.trim();
             if (newIdCandidate && newIdCandidate !== oldId) {
@@ -439,27 +472,22 @@
             }
         });
 
-        // Make dimension cells editable and restrict input to numerical values.
         const widthCell = row.cells[1];
         const heightCell = row.cells[2];
         widthCell.contentEditable = "true";
         heightCell.contentEditable = "true";
-
-        // Attach keypress and paste events to restrict input.
         widthCell.addEventListener("keypress", allowOnlyNumbers);
         heightCell.addEventListener("keypress", allowOnlyNumbers);
         widthCell.addEventListener("paste", filterPaste);
         heightCell.addEventListener("paste", filterPaste);
-
         widthCell.addEventListener("blur", function() {
             const newWidth = parseFloat(this.textContent);
             if (!isNaN(newWidth)) {
-                const unit = row.cells[3].textContent;
-                const factor = conversionFactors[unit];
-                const newWidthPx = newWidth * factor;
+                const newWidthPx = newWidth * conversionFactors[currentUnit];
                 const frameElem = document.getElementById(row.id.replace("-row", ""));
                 if (frameElem) {
                     frameElem.style.width = newWidthPx + "px";
+                    frameElem.dataset.origWidth = newWidthPx;
                 }
             } else {
                 this.textContent = frameWidthInput;
@@ -468,12 +496,11 @@
         heightCell.addEventListener("blur", function() {
             const newHeight = parseFloat(this.textContent);
             if (!isNaN(newHeight)) {
-                const unit = row.cells[3].textContent;
-                const factor = conversionFactors[unit];
-                const newHeightPx = newHeight * factor;
+                const newHeightPx = newHeight * conversionFactors[currentUnit];
                 const frameElem = document.getElementById(row.id.replace("-row", ""));
                 if (frameElem) {
                     frameElem.style.height = newHeightPx + "px";
+                    frameElem.dataset.origHeight = newHeightPx;
                 }
             } else {
                 this.textContent = frameHeightInput;
@@ -481,30 +508,37 @@
         });
     });
 
-    // Delete a specific frame and update history.
-    function deleteFrame(frameId) {
-        const frame = document.getElementById(frameId);
-        if (frame) {
-            paper.removeChild(frame);
+    function allowOnlyNumbers(e) {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (["ArrowLeft", "ArrowRight", "Backspace", "Delete"].includes(e.key)) return;
+        const currentValue = e.target.textContent;
+        if (!/[0-9]/.test(e.key)) {
+            if (e.key === "." && currentValue.indexOf(".") === -1) return;
+            e.preventDefault();
         }
-        const row = document.getElementById(frameId + "-row");
-        if (row) {
-            frameList.removeChild(row);
-        }
-        frameHistory = frameHistory.filter((id) => id !== frameId);
+    }
+    function filterPaste(e) {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData("text");
+        const filtered = text.replace(/[^0-9.]/g, "");
+        document.execCommand("insertText", false, filtered);
     }
 
-    // Delete all frames and clear history.
+    function deleteFrame(frameId) {
+        const frame = document.getElementById(frameId);
+        if (frame) paper.removeChild(frame);
+        const row = document.getElementById(frameId + "-row");
+        if (row) frameList.removeChild(row);
+        frameHistory = frameHistory.filter(id => id !== frameId);
+    }
+
     document.getElementById("deleteAllFrames").addEventListener("click", () => {
-        while (paper.firstChild) {
-            paper.removeChild(paper.firstChild);
-        }
+        while (paper.firstChild) paper.removeChild(paper.firstChild);
         frameList.innerHTML = "";
         frameHistory = [];
         frameCount = 0;
     });
 
-    // Undo the last inserted frame.
     document.getElementById("undoAction").addEventListener("click", () => {
         if (frameHistory.length > 0) {
             const lastFrameId = frameHistory.pop();
@@ -514,20 +548,18 @@
         }
     });
 
-    // Organize frames: arrange them with the specified margin and optionally allow 90° rotations.
     document.getElementById("organizeBtn").addEventListener("click", organizeFrames);
 
     function organizeFrames() {
         const marginInputVal = parseFloat(document.getElementById("marginInput").value) || 0;
-        const marginUnit = document.getElementById("marginUnit").value;
-        const margin = marginInputVal * conversionFactors[marginUnit];
+        const margin = marginInputVal * conversionFactors[currentUnit];
         const allowRotation = document.getElementById("allowRotation").checked;
 
         const frameElements = Array.from(paper.getElementsByClassName("frame"));
-        const frames = frameElements.map((frame) => {
-            const width = parseInt(frame.style.width, 10);
-            const height = parseInt(frame.style.height, 10);
-            return { element: frame, origWidth: width, origHeight: height };
+        const frames = frameElements.map(frame => {
+            const origW = parseFloat(frame.dataset.origWidth);
+            const origH = parseFloat(frame.dataset.origHeight);
+            return { element: frame, origWidth: origW, origHeight: origH };
         });
 
         const totalArea = frames.reduce((sum, f) => sum + f.origWidth * f.origHeight, 0);
@@ -538,11 +570,9 @@
         let rowHeight = 0;
         let maxX = 0;
 
-        frames.forEach((f) => {
-            let origW = f.origWidth,
-                origH = f.origHeight;
-            let usedW = origW,
-                usedH = origH;
+        frames.forEach(f => {
+            let origW = f.origWidth, origH = f.origHeight;
+            let usedW = origW, usedH = origH;
             let appliedRotation = 0;
 
             if (allowRotation) {
@@ -597,7 +627,6 @@
         paperSizeOutput.textContent = `Paper Size: ${newPaperWidth}px x ${newPaperHeight}px`;
     }
 
-    // Basic drag functionality with boundary constraints.
     function makeDraggable(element) {
         let initialX, initialY;
         element.addEventListener("mousedown", dragStart);
@@ -634,20 +663,3 @@
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
