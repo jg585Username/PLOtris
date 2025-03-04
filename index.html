@@ -27,7 +27,7 @@
             background: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
             display: flex;
             flex-wrap: wrap;
@@ -75,7 +75,7 @@
             background: var(--paper-background);
             border: 2px solid #ddd;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             overflow: hidden;
         }
         /* Use top left as transform origin to avoid clipping after rotations */
@@ -83,21 +83,21 @@
             position: absolute;
             border: 2px solid var(--primary-color);
             background: var(--frame-background);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
             box-sizing: border-box;
             cursor: move;
             transition: box-shadow 0.2s ease;
             transform-origin: center;
         }
         .frame.dragging {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
         /* Frame Tracker styling */
         #frameTracker {
             background: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
         #frameTracker table {
             width: 100%;
@@ -113,6 +113,10 @@
             background-color: #f0f0f0;
         }
         .frame-id-cell {
+            cursor: text;
+        }
+        /* Make width and height cells editable too */
+        .dim-cell {
             cursor: text;
         }
         .delete-btn {
@@ -151,7 +155,6 @@
             font-size: 12px;
             margin-left: 5px;
         }
-        /* New: Paper size output box */
         #paperSizeOutput {
             margin-top: 10px;
             font-size: 14px;
@@ -239,7 +242,6 @@
             </label>
         </div>
         <button id="organizeBtn">Organize</button>
-        <!-- New: Paper size output box -->
         <div id="paperSizeOutput"></div>
     </div>
 </div>
@@ -374,8 +376,8 @@
         row.id = frameId + "-row";
         row.innerHTML = `
       <td class="frame-id-cell" contenteditable="true" data-frame-id="${frameId}">${frameId}</td>
-      <td>${frameWidthInput}</td>
-      <td>${frameHeightInput}</td>
+      <td class="dim-cell">${frameWidthInput}</td>
+      <td class="dim-cell">${frameHeightInput}</td>
       <td>${frameUnit}</td>
       <td>
         <input type="range" min="0" max="360" value="0" data-frame-id="${frameId}" class="rotate-slider">
@@ -385,12 +387,14 @@
     `;
         frameList.appendChild(row);
 
+        // Attach event listener to the delete button so it always reads the current frame ID.
         const deleteBtn = row.querySelector(".delete-btn");
         deleteBtn.addEventListener("click", function () {
             const currentFrameId = this.getAttribute("data-frame-id");
             deleteFrame(currentFrameId);
         });
 
+        // Attach event listener to the rotation slider.
         const rotateSlider = row.querySelector(".rotate-slider");
         const rotateValue = row.querySelector(".rotate-value");
         rotateSlider.addEventListener("input", (e) => {
@@ -399,6 +403,7 @@
             rotateValue.textContent = `${angle}°`;
         });
 
+        // Attach blur event to allow inline renaming of the frame ID.
         const idCell = row.querySelector(".frame-id-cell");
         idCell.addEventListener("blur", function (e) {
             const oldId = this.getAttribute("data-frame-id");
@@ -411,9 +416,45 @@
                 this.textContent = oldId;
             }
         });
+
+        // Make width and height cells editable and update frame dimensions on blur.
+        const widthCell = row.cells[1];
+        const heightCell = row.cells[2];
+        widthCell.contentEditable = "true";
+        heightCell.contentEditable = "true";
+
+        widthCell.addEventListener("blur", function() {
+            const newWidth = parseFloat(this.textContent);
+            if (!isNaN(newWidth)) {
+                const unit = row.cells[3].textContent;
+                const factor = conversionFactors[unit];
+                const newWidthPx = newWidth * factor;
+                const frameElem = document.getElementById(row.id.replace("-row", ""));
+                if (frameElem) {
+                    frameElem.style.width = newWidthPx + "px";
+                }
+            } else {
+                // Revert to previous value if input is invalid.
+                this.textContent = frameWidthInput;
+            }
+        });
+        heightCell.addEventListener("blur", function() {
+            const newHeight = parseFloat(this.textContent);
+            if (!isNaN(newHeight)) {
+                const unit = row.cells[3].textContent;
+                const factor = conversionFactors[unit];
+                const newHeightPx = newHeight * factor;
+                const frameElem = document.getElementById(row.id.replace("-row", ""));
+                if (frameElem) {
+                    frameElem.style.height = newHeightPx + "px";
+                }
+            } else {
+                this.textContent = frameHeightInput;
+            }
+        });
     });
 
-    // Delete a specific frame and update history
+    // Delete a specific frame and update history.
     function deleteFrame(frameId) {
         const frame = document.getElementById(frameId);
         if (frame) {
@@ -426,7 +467,7 @@
         frameHistory = frameHistory.filter((id) => id !== frameId);
     }
 
-    // Delete all frames and clear history
+    // Delete all frames and clear history.
     document.getElementById("deleteAllFrames").addEventListener("click", () => {
         while (paper.firstChild) {
             paper.removeChild(paper.firstChild);
@@ -436,7 +477,7 @@
         frameCount = 0;
     });
 
-    // Undo the last inserted frame
+    // Undo the last inserted frame.
     document.getElementById("undoAction").addEventListener("click", () => {
         if (frameHistory.length > 0) {
             const lastFrameId = frameHistory.pop();
@@ -483,7 +524,6 @@
             let appliedRotation = 0; // degrees
 
             if (allowRotation) {
-                // Check if rotated orientation would fit better.
                 const normalFits = currentX + origW + margin <= targetWidth;
                 const rotatedFits = currentX + origH + margin <= targetWidth;
                 if (!normalFits && rotatedFits) {
@@ -507,15 +547,12 @@
                 rowHeight = 0;
             }
 
-            // Place the frame.
             f.element.style.left = currentX + "px";
             f.element.style.top = currentY + "px";
             if (appliedRotation) {
                 f.element.style.transform = `rotate(${appliedRotation}deg)`;
-                // Update the frame's dimensions to the effective ones.
                 f.element.style.width = usedW + "px";
                 f.element.style.height = usedH + "px";
-                // Update tracker row.
                 const row = document.getElementById(f.element.id + "-row");
                 if (row) {
                     row.cells[1].textContent = usedW;
@@ -576,6 +613,7 @@
 </script>
 </body>
 </html>
+
 
 
 
