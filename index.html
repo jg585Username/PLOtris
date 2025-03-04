@@ -27,7 +27,7 @@
             background: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             display: flex;
             flex-wrap: wrap;
@@ -75,7 +75,7 @@
             background: var(--paper-background);
             border: 2px solid #ddd;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             overflow: hidden;
         }
         /* Use top left as transform origin to avoid clipping after rotations */
@@ -83,21 +83,21 @@
             position: absolute;
             border: 2px solid var(--primary-color);
             background: var(--frame-background);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             box-sizing: border-box;
             cursor: move;
             transition: box-shadow 0.2s ease;
             transform-origin: center;
         }
         .frame.dragging {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         /* Frame Tracker styling */
         #frameTracker {
             background: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         #frameTracker table {
             width: 100%;
@@ -115,7 +115,7 @@
         .frame-id-cell {
             cursor: text;
         }
-        /* Make width and height cells editable too */
+        /* Make width and height cells editable */
         .dim-cell {
             cursor: text;
         }
@@ -300,6 +300,31 @@
     let frameCount = 0;
     let frameHistory = []; // Stack for tracking frame insertions
 
+    // Function to restrict input to numbers and at most one period.
+    function allowOnlyNumbers(e) {
+        // Allow control keys (backspace, tab, enter, etc.)
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        // Allow navigation keys
+        if (["ArrowLeft", "ArrowRight", "Backspace", "Delete"].indexOf(e.key) !== -1) return;
+        const currentValue = e.target.textContent;
+        // Allow digits
+        if (!/[0-9]/.test(e.key)) {
+            // Allow one dot if not already present
+            if (e.key === "." && currentValue.indexOf(".") === -1) {
+                return;
+            }
+            e.preventDefault();
+        }
+    }
+
+    // Attach paste event to filter pasted text to numeric characters only.
+    function filterPaste(e) {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData("text");
+        const filtered = text.replace(/[^0-9.]/g, "");
+        document.execCommand("insertText", false, filtered);
+    }
+
     // Generate a unique ID given a base name
     function generateUniqueId(base) {
         let id = base;
@@ -387,14 +412,12 @@
     `;
         frameList.appendChild(row);
 
-        // Attach event listener to the delete button so it always reads the current frame ID.
         const deleteBtn = row.querySelector(".delete-btn");
         deleteBtn.addEventListener("click", function () {
             const currentFrameId = this.getAttribute("data-frame-id");
             deleteFrame(currentFrameId);
         });
 
-        // Attach event listener to the rotation slider.
         const rotateSlider = row.querySelector(".rotate-slider");
         const rotateValue = row.querySelector(".rotate-value");
         rotateSlider.addEventListener("input", (e) => {
@@ -403,7 +426,6 @@
             rotateValue.textContent = `${angle}°`;
         });
 
-        // Attach blur event to allow inline renaming of the frame ID.
         const idCell = row.querySelector(".frame-id-cell");
         idCell.addEventListener("blur", function (e) {
             const oldId = this.getAttribute("data-frame-id");
@@ -417,11 +439,17 @@
             }
         });
 
-        // Make width and height cells editable and update frame dimensions on blur.
+        // Make dimension cells editable and restrict input to numerical values.
         const widthCell = row.cells[1];
         const heightCell = row.cells[2];
         widthCell.contentEditable = "true";
         heightCell.contentEditable = "true";
+
+        // Attach keypress and paste events to restrict input.
+        widthCell.addEventListener("keypress", allowOnlyNumbers);
+        heightCell.addEventListener("keypress", allowOnlyNumbers);
+        widthCell.addEventListener("paste", filterPaste);
+        heightCell.addEventListener("paste", filterPaste);
 
         widthCell.addEventListener("blur", function() {
             const newWidth = parseFloat(this.textContent);
@@ -434,7 +462,6 @@
                     frameElem.style.width = newWidthPx + "px";
                 }
             } else {
-                // Revert to previous value if input is invalid.
                 this.textContent = frameWidthInput;
             }
         });
@@ -491,15 +518,11 @@
     document.getElementById("organizeBtn").addEventListener("click", organizeFrames);
 
     function organizeFrames() {
-        // Read margin value and unit; convert to pixels.
         const marginInputVal = parseFloat(document.getElementById("marginInput").value) || 0;
         const marginUnit = document.getElementById("marginUnit").value;
         const margin = marginInputVal * conversionFactors[marginUnit];
-
-        // Determine if rotation is allowed for packing.
         const allowRotation = document.getElementById("allowRotation").checked;
 
-        // Gather frame elements and their original dimensions.
         const frameElements = Array.from(paper.getElementsByClassName("frame"));
         const frames = frameElements.map((frame) => {
             const width = parseInt(frame.style.width, 10);
@@ -507,7 +530,6 @@
             return { element: frame, origWidth: width, origHeight: height };
         });
 
-        // Estimate target paper width based on total area plus margins.
         const totalArea = frames.reduce((sum, f) => sum + f.origWidth * f.origHeight, 0);
         let targetWidth = Math.ceil(Math.sqrt(totalArea)) + margin * 2;
 
@@ -521,7 +543,7 @@
                 origH = f.origHeight;
             let usedW = origW,
                 usedH = origH;
-            let appliedRotation = 0; // degrees
+            let appliedRotation = 0;
 
             if (allowRotation) {
                 const normalFits = currentX + origW + margin <= targetWidth;
@@ -571,7 +593,6 @@
         paper.style.width = newPaperWidth + "px";
         paper.style.height = newPaperHeight + "px";
 
-        // Update the paper size output box.
         const paperSizeOutput = document.getElementById("paperSizeOutput");
         paperSizeOutput.textContent = `Paper Size: ${newPaperWidth}px x ${newPaperHeight}px`;
     }
@@ -613,6 +634,7 @@
 </script>
 </body>
 </html>
+
 
 
 
