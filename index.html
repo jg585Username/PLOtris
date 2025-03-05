@@ -226,7 +226,7 @@
         <h2>Organize</h2>
         <div>
             <label for="marginInput">Margin:</label>
-            <input type="number" id="marginInput" value="10" />
+            <input type="number" id="marginInput" value="1" />
             <select id="marginUnit">
                 <option value="px" >px</option>
                 <option value="cm">cm</option>
@@ -270,7 +270,7 @@
 </div>
 
 <script>
-    // Global current unit state; initially "px"
+    // Global current unit state; initially "inch"
     let currentUnit = "inch";
 
     const conversionFactors = {
@@ -291,7 +291,6 @@
     updateScaleInfo();
     updateMarginScaleInfo();
 
-    // Sync unit change across all unit selectors and convert dimensions.
     function syncUnits(newUnit) {
         if (newUnit === currentUnit) return;
         const oldUnit = currentUnit;
@@ -310,7 +309,6 @@
         const newPaperHeightValue = actualPaperHeightPx / conversionFactors[newUnit];
         paperWidthInput.value = newPaperWidthValue;
         paperHeightInput.value = newPaperHeightValue;
-        // Paper element remains in px.
         paper.style.width = actualPaperWidthPx + "px";
         paper.style.height = actualPaperHeightPx + "px";
 
@@ -318,9 +316,7 @@
         const rows = document.querySelectorAll("#frameList tr");
         rows.forEach(row => {
             const unitCell = row.cells[3];
-            // Change unit cell to new unit.
             unitCell.textContent = newUnit;
-            // For width and height, recalc based on stored original pixel dimensions.
             const frameId = row.id.replace("-row", "");
             const frameElem = document.getElementById(frameId);
             if (frameElem) {
@@ -337,7 +333,6 @@
         const marginInput = document.getElementById("marginInput");
         const oldMargin = parseFloat(marginInput.value);
         marginInput.value = oldMargin * ratio; // multiply by ratio to convert
-        // Update all unit selectors to newUnit.
         document.getElementById("paperUnit").value = newUnit;
         document.getElementById("frameUnit").value = newUnit;
         document.getElementById("marginUnit").value = newUnit;
@@ -345,7 +340,6 @@
         updateMarginScaleInfo();
     }
 
-    // Attach event listeners to unit selectors.
     document.getElementById("paperUnit").addEventListener("change", function() {
         syncUnits(this.value);
     });
@@ -361,7 +355,6 @@
     let frameCount = 0;
     let frameHistory = [];
 
-    // Store original dimensions in data attributes.
     function addFrameDataAttributes(frame, widthPx, heightPx) {
         frame.dataset.origWidth = widthPx;
         frame.dataset.origHeight = heightPx;
@@ -384,20 +377,27 @@
         if (row) {
             row.id = newId + "-row";
             const deleteBtn = row.querySelector(".delete-btn");
-            if (deleteBtn) deleteBtn.setAttribute("data-frame-id", newId);
+            if (deleteBtn) {
+                deleteBtn.setAttribute("data-frame-id", newId);
+            }
             const slider = row.querySelector(".rotate-slider");
-            if (slider) slider.setAttribute("data-frame-id", newId);
+            if (slider) {
+                slider.setAttribute("data-frame-id", newId);
+            }
             const idCell = row.querySelector(".frame-id-cell");
-            if (idCell) idCell.setAttribute("data-frame-id", newId);
+            if (idCell) {
+                idCell.setAttribute("data-frame-id", newId);
+            }
         }
         const index = frameHistory.indexOf(oldId);
-        if (index !== -1) frameHistory[index] = newId;
+        if (index !== -1) {
+            frameHistory[index] = newId;
+        }
     }
 
     document.getElementById("setPaperSize").addEventListener("click", () => {
         const paperWidthInput = document.getElementById("paperWidth").value;
         const paperHeightInput = document.getElementById("paperHeight").value;
-        // Actual dimensions in pixels remain the same.
         const actualWidthPx = paperWidthInput * conversionFactors[currentUnit];
         const actualHeightPx = paperHeightInput * conversionFactors[currentUnit];
         paper.style.width = actualWidthPx + "px";
@@ -408,7 +408,6 @@
         const frameNameInput = document.getElementById("frameName").value.trim();
         const frameWidthInput = document.getElementById("frameWidth").value;
         const frameHeightInput = document.getElementById("frameHeight").value;
-        // Use currentUnit for frame dimensions.
         const factor = conversionFactors[currentUnit];
         frameCount++;
         let baseName = frameNameInput ? frameNameInput : "frame-" + frameCount;
@@ -533,7 +532,9 @@
     }
 
     document.getElementById("deleteAllFrames").addEventListener("click", () => {
-        while (paper.firstChild) paper.removeChild(paper.firstChild);
+        while (paper.firstChild) {
+            paper.removeChild(paper.firstChild);
+        }
         frameList.innerHTML = "";
         frameHistory = [];
         frameCount = 0;
@@ -550,55 +551,119 @@
 
     document.getElementById("organizeBtn").addEventListener("click", organizeFrames);
 
+    // *** ADDED code to try swapping paper's width & height for minimal bounding area ***
     function organizeFrames() {
         const marginInputVal = parseFloat(document.getElementById("marginInput").value) || 0;
         const margin = marginInputVal * conversionFactors[currentUnit];
         const allowRotation = document.getElementById("allowRotation").checked;
 
-        const frameElements = Array.from(paper.getElementsByClassName("frame"));
+        // gather frames data
+        const frameElements = Array.from(document.getElementsByClassName("frame"));
         const frames = frameElements.map(frame => {
             const origW = parseFloat(frame.dataset.origWidth);
             const origH = parseFloat(frame.dataset.origHeight);
             return { element: frame, origWidth: origW, origHeight: origH };
         });
 
-        const totalArea = frames.reduce((sum, f) => sum + f.origWidth * f.origHeight, 0);
-        let targetWidth = Math.ceil(Math.sqrt(totalArea)) + margin * 2;
+        // helper: layout frames with a given target "paper width" in px
+        function layoutWithTargetWidth(targetW) {
+            let currentX = margin;
+            let currentY = margin;
+            let rowHeight = 0;
+            let maxX = 0;
 
+            frames.forEach(f => {
+                let usedW = f.origWidth, usedH = f.origHeight;
+                let appliedRotation = 0;
+
+                if (allowRotation) {
+                    const normalFits = currentX + usedW + margin <= targetW;
+                    const rotatedFits = currentX + usedH + margin <= targetW;
+                    if (!normalFits && rotatedFits) {
+                        [usedW, usedH] = [usedH, usedW];
+                        appliedRotation = 90;
+                    } else if (normalFits && rotatedFits) {
+                        // pick orientation that yields smaller rowHeight
+                        const rowHIfNormal = Math.max(rowHeight, usedH);
+                        const rowHIfRotated = Math.max(rowHeight, usedW);
+                        if (rowHIfRotated < rowHIfNormal) {
+                            [usedW, usedH] = [usedH, usedW];
+                            appliedRotation = 90;
+                        }
+                    }
+                }
+
+                if (currentX + usedW + margin > targetW) {
+                    currentY += rowHeight + margin;
+                    currentX = margin;
+                    rowHeight = 0;
+                }
+                currentX += usedW + margin;
+                rowHeight = Math.max(rowHeight, usedH);
+                maxX = Math.max(maxX, currentX);
+            });
+
+            const usedWidth = maxX;
+            const usedHeight = currentY + rowHeight + margin;
+            return { usedWidth, usedHeight };
+        }
+
+        // get paper dims in px
+        const paperWpx = parseFloat(document.getElementById("paperWidth").value) * conversionFactors[currentUnit];
+        const paperHpx = parseFloat(document.getElementById("paperHeight").value) * conversionFactors[currentUnit];
+
+        // layout frames with normal orientation
+        const normalResult = layoutWithTargetWidth(paperWpx);
+        const normalArea = normalResult.usedWidth * normalResult.usedHeight;
+
+        // layout frames with swapped orientation
+        const swappedResult = layoutWithTargetWidth(paperHpx);
+        const swappedArea = swappedResult.usedWidth * swappedResult.usedHeight;
+
+        // pick smaller bounding area
+        let finalWpx, finalHpx, chosenTargetW;
+        if (swappedArea < normalArea) {
+            finalWpx = swappedResult.usedWidth;
+            finalHpx = swappedResult.usedHeight;
+            chosenTargetW = paperHpx; // we used the paper height as "width"
+        } else {
+            finalWpx = normalResult.usedWidth;
+            finalHpx = normalResult.usedHeight;
+            chosenTargetW = paperWpx; // normal orientation
+        }
+
+        // second pass: place frames absolutely with the chosen orientation
         let currentX = margin;
         let currentY = margin;
         let rowHeight = 0;
         let maxX = 0;
 
         frames.forEach(f => {
-            let origW = f.origWidth, origH = f.origHeight;
-            let usedW = origW, usedH = origH;
+            let usedW = f.origWidth, usedH = f.origHeight;
             let appliedRotation = 0;
-
             if (allowRotation) {
-                const normalFits = currentX + origW + margin <= targetWidth;
-                const rotatedFits = currentX + origH + margin <= targetWidth;
+                const normalFits = currentX + usedW + margin <= chosenTargetW;
+                const rotatedFits = currentX + usedH + margin <= chosenTargetW;
                 if (!normalFits && rotatedFits) {
-                    usedW = origH;
-                    usedH = origW;
+                    [usedW, usedH] = [usedH, usedW];
                     appliedRotation = 90;
                 } else if (normalFits && rotatedFits) {
-                    const option1RowHeight = Math.max(rowHeight, origH);
-                    const option2RowHeight = Math.max(rowHeight, origW);
-                    if (option2RowHeight < option1RowHeight) {
-                        usedW = origH;
-                        usedH = origW;
+                    const rowHIfNormal = Math.max(rowHeight, usedH);
+                    const rowHIfRotated = Math.max(rowHeight, usedW);
+                    if (rowHIfRotated < rowHIfNormal) {
+                        [usedW, usedH] = [usedH, usedW];
                         appliedRotation = 90;
                     }
                 }
             }
 
-            if (currentX + usedW + margin > targetWidth) {
+            if (currentX + usedW + margin > chosenTargetW) {
                 currentY += rowHeight + margin;
                 currentX = margin;
                 rowHeight = 0;
             }
 
+            // place the frame
             f.element.style.left = currentX + "px";
             f.element.style.top = currentY + "px";
             if (appliedRotation) {
@@ -612,21 +677,25 @@
                 }
             } else {
                 f.element.style.transform = "rotate(0deg)";
+                // fix: ensure no syntax error
+                f.element.style.width = f.origWidth + "px";
+                f.element.style.height = f.origHeight + "px";
             }
+
             currentX += usedW + margin;
             rowHeight = Math.max(rowHeight, usedH);
             maxX = Math.max(maxX, currentX);
         });
 
-        const newPaperWidth = maxX;
-        const newPaperHeight = currentY + rowHeight + margin;
-        paper.style.width = newPaperWidth + "px";
-        paper.style.height = newPaperHeight + "px";
+        // set final paper dimensions
+        paper.style.width = finalWpx + "px";
+        paper.style.height = finalHpx + "px";
 
+        // display final size in current unit
+        const displayedW = finalWpx / conversionFactors[currentUnit];
+        const displayedH = finalHpx / conversionFactors[currentUnit];
         const paperSizeOutput = document.getElementById("paperSizeOutput");
-        const displayedWidth = newPaperWidth / conversionFactors[currentUnit];
-        const displayedHeight = newPaperHeight / conversionFactors[currentUnit];
-        paperSizeOutput.textContent = `Paper Size: ${displayedWidth.toFixed(2)} ${currentUnit} x ${displayedHeight.toFixed(2)} ${currentUnit}`;
+        paperSizeOutput.textContent = `Paper Size: ${displayedW.toFixed(2)} ${currentUnit} x ${displayedH.toFixed(2)} ${currentUnit}`;
     }
 
     function makeDraggable(element) {
@@ -665,3 +734,4 @@
 </script>
 </body>
 </html>
+
