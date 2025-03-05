@@ -557,98 +557,295 @@
         const margin = marginInputVal * conversionFactors[currentUnit];
         const allowRotation = document.getElementById("allowRotation").checked;
 
-        // gather frames data
+        // Gather frames data
         const frameElements = Array.from(document.getElementsByClassName("frame"));
         const frames = frameElements.map(frame => {
             const origW = parseFloat(frame.dataset.origWidth);
             const origH = parseFloat(frame.dataset.origHeight);
-            return { element: frame, origWidth: origW, origHeight: origH };
+            return {
+                element: frame,
+                origWidth: origW,
+                origHeight: origH,
+                rawWidth: origW,
+                rawHeight: origH
+            };
         });
 
-        // helper: layout frames with a given target "paper width" in px
-        function layoutWithTargetWidth(targetW) {
-            let currentX = margin;
-            let currentY = margin;
-            let rowHeight = 0;
-            let maxX = 0;
+        // Sort frames by area in descending order for better packing
+        frames.sort((a, b) => (b.origWidth * b.origHeight) - (a.origWidth * a.origHeight));
 
-            // Create a copy of frames to manipulate
-            const layoutFrames = frames.map(f => ({...f}));
+        // Maximal Rectangles packing algorithm
+        function maximalRectanglesPacking(binWidth) {
+            // Deep copy frames array to work with
+            const layoutFrames = JSON.parse(JSON.stringify(frames));
 
-            layoutFrames.forEach(f => {
-                let usedW = f.origWidth, usedH = f.origHeight;
+            // Initialize with a single maximal rectangle covering the entire bin
+            // Note: we start with margin on all sides
+            const freeRectangles = [{
+                x: margin,
+                y: margin,
+                width: binWidth - 2*margin,
+                height: Number.MAX_SAFE_INTEGER
+            }];
 
-                if (allowRotation) {
-                    // Check if we need to start a new row first
-                    if (currentX + usedW + margin > targetW && currentX + usedH + margin <= targetW) {
-                        // Rotation works better than starting new row
-                        [usedW, usedH] = [usedH, usedW];
-                    } else if (currentX + usedW + margin > targetW) {
-                        // Need to start a new row regardless
-                        currentY += rowHeight + margin;
-                        currentX = margin;
-                        rowHeight = 0;
+            let binHeight = margin; // Start with margin at the top
 
-                        // After moving to a new row, check if rotation is beneficial
-                        if (usedW > usedH && currentX + usedH + margin <= targetW) {
-                            [usedW, usedH] = [usedH, usedW];
-                        }
-                    } else if (currentX + usedW + margin <= targetW && currentX + usedH + margin <= targetW) {
-                        // Both orientations fit, choose the one that minimizes row height
-                        const rowHIfNormal = Math.max(rowHeight, usedH);
-                        const rowHIfRotated = Math.max(rowHeight, usedW);
-                        if (rowHIfRotated < rowHIfNormal) {
-                            [usedW, usedH] = [usedH, usedW];
-                        }
+            // Place each frame
+            layoutFrames.forEach(frame => {
+                // Find best position for this frame
+                const placement = findBestPlacement(frame, freeRectangles, allowRotation, margin);
+
+                if (placement) {
+                    // Apply the placement (positions already include margin space)
+                    frame.posX = placement.x;
+                    frame.posY = placement.y;
+                    frame.usedWidth = placement.width;
+                    frame.usedHeight = placement.height;
+                    frame.rotated = placement.rotated;
+
+                    // Update bin height - add margin to placement height for boundary
+                    binHeight = Math.max(binHeight, placement.y + placement.height + margin);
+
+                    // Update free rectangles - note that we include margin in the space taken
+                    placeRectangle({
+                        x: placement.x - margin,  // Expand by margin for spacing
+                        y: placement.y - margin,  // Expand by margin for spacing
+                        width: placement.width + 2*margin,  // Add margins on both sides
+                        height: placement.height + 2*margin  // Add margins on both sides
+                    }, freeRectangles);
+                } else {
+                    // If we can't place it, put it at the bottom
+                    frame.posX = margin;
+                    frame.posY = binHeight;
+                    frame.usedWidth = frame.origWidth;
+                    frame.usedHeight = frame.origHeight;
+                    frame.rotated = false;
+
+                    binHeight += frame.origHeight + margin;
+
+                    // Create new free rectangles on the sides of this one (include margin in used space)
+                    if (frame.origWidth + 2*margin < binWidth - 2*margin) {
+                        freeRectangles.push({
+                            x: margin + frame.origWidth + margin, // Add margin spacing
+                            y: frame.posY - margin, // Back up for margin space
+                            width: binWidth - 2*margin - (frame.origWidth + margin),
+                            height: frame.origHeight + 2*margin
+                        });
                     }
-                } else if (currentX + usedW + margin > targetW) {
-                    // No rotation allowed, just move to next row
-                    currentY += rowHeight + margin;
-                    currentX = margin;
-                    rowHeight = 0;
                 }
-
-                // Update position tracking
-                f.usedWidth = usedW;
-                f.usedHeight = usedH;
-                f.posX = currentX;
-                f.posY = currentY;
-
-                currentX += usedW + margin;
-                rowHeight = Math.max(rowHeight, usedH);
-                maxX = Math.max(maxX, currentX);
             });
 
-            const usedWidth = maxX;
-            const usedHeight = currentY + rowHeight + margin;
-            return { usedWidth, usedHeight, layoutFrames };
+            return {
+                usedWidth: binWidth,
+                usedHeight: binHeight,
+                layoutFrames: layoutFrames
+            };
         }
 
-        // get paper dims in px
+        // Function to find the best placement for a frame
+        function findBestPlacement(frame, freeRectangles, allowRotation, margin) {
+            let bestScore = -Infinity;
+            let bestRect = null;
+            let bestRotated = false;
+
+            // Heuristic methods for selecting placement
+            const bestFitMethod = "best-short-side-fit"; // Options: "best-area-fit", "best-short-side-fit", "best-long-side-fit"
+
+            // Try each free rectangle
+            for (const rect of freeRectangles) {
+                // Try normal orientation
+                if (frame.origWidth <= rect.width && frame.origHeight <= rect.height) {
+                    const score = scoreRectangle(rect.width, rect.height, frame.origWidth, frame.origHeight, bestFitMethod);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestRect = rect;
+                        bestRotated = false;
+                    }
+                }
+
+                // Try rotated orientation if allowed
+                if (allowRotation && frame.origHeight <= rect.width && frame.origWidth <= rect.height) {
+                    const score = scoreRectangle(rect.width, rect.height, frame.origHeight, frame.origWidth, bestFitMethod);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestRect = rect;
+                        bestRotated = true;
+                    }
+                }
+            }
+
+            if (bestRect) {
+                // Width and height that will actually be used
+                const width = bestRotated ? frame.origHeight : frame.origWidth;
+                const height = bestRotated ? frame.origWidth : frame.origHeight;
+
+                // Position includes the margin so elements don't touch
+                return {
+                    x: bestRect.x,
+                    y: bestRect.y,
+                    width: width,
+                    height: height,
+                    rotated: bestRotated
+                };
+            }
+
+            return null;
+        }
+
+        // Score a potential placement
+        function scoreRectangle(rectWidth, rectHeight, frameWidth, frameHeight, method) {
+            const areaFit = rectWidth * rectHeight - frameWidth * frameHeight;
+
+            switch (method) {
+                case "best-area-fit":
+                    return -areaFit; // Smaller leftover area is better
+                case "best-short-side-fit":
+                    return -Math.min(rectWidth - frameWidth, rectHeight - frameHeight);
+                case "best-long-side-fit":
+                    return -Math.max(rectWidth - frameWidth, rectHeight - frameHeight);
+                default:
+                    return -areaFit;
+            }
+        }
+
+        // Update free rectangles after placing a rectangle
+        function placeRectangle(placement, freeRectangles) {
+            // Note: placement should already include margin space around the object
+
+            // Split free rectangles that overlap with the placement
+            const newFreeRectangles = [];
+
+            for (let i = 0; i < freeRectangles.length; i++) {
+                const free = freeRectangles[i];
+
+                // If no overlap, keep the rectangle as is
+                if (placement.x + placement.width <= free.x ||
+                    placement.x >= free.x + free.width ||
+                    placement.y + placement.height <= free.y ||
+                    placement.y >= free.y + free.height) {
+                    newFreeRectangles.push(free);
+                    continue;
+                }
+
+                // We have overlap - split the free rectangle into up to 4 new ones
+
+                // Left of placement
+                if (placement.x > free.x) {
+                    newFreeRectangles.push({
+                        x: free.x,
+                        y: free.y,
+                        width: placement.x - free.x,
+                        height: free.height
+                    });
+                }
+
+                // Right of placement
+                if (free.x + free.width > placement.x + placement.width) {
+                    newFreeRectangles.push({
+                        x: placement.x + placement.width,
+                        y: free.y,
+                        width: free.x + free.width - (placement.x + placement.width),
+                        height: free.height
+                    });
+                }
+
+                // Above placement
+                if (placement.y > free.y) {
+                    newFreeRectangles.push({
+                        x: free.x,
+                        y: free.y,
+                        width: free.width,
+                        height: placement.y - free.y
+                    });
+                }
+
+                // Below placement
+                if (free.y + free.height > placement.y + placement.height) {
+                    newFreeRectangles.push({
+                        x: free.x,
+                        y: placement.y + placement.height,
+                        width: free.width,
+                        height: free.y + free.height - (placement.y + placement.height)
+                    });
+                }
+            }
+
+            // Replace the old free rectangles with the new ones
+            freeRectangles.length = 0;
+
+            // Filter out contained rectangles
+            for (const rect of newFreeRectangles) {
+                if (!isRectangleContained(rect, newFreeRectangles)) {
+                    freeRectangles.push(rect);
+                }
+            }
+
+            // Merge overlapping free rectangles to reduce their number
+            mergeFreeRectangles(freeRectangles);
+        }
+
+        // Check if a rectangle is contained within any other rectangle
+        function isRectangleContained(rect, rectangles) {
+            for (const other of rectangles) {
+                if (other !== rect &&
+                    rect.x >= other.x &&
+                    rect.y >= other.y &&
+                    rect.x + rect.width <= other.x + other.width &&
+                    rect.y + rect.height <= other.y + other.height) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Merge overlapping free rectangles to reduce fragmentation
+        function mergeFreeRectangles(freeRectangles) {
+            // Sort rectangles by area in descending order
+            freeRectangles.sort((a, b) => (b.width * b.height) - (a.width * a.height));
+
+            // This is a simplified merge that removes redundant rectangles
+            // A more complex merge could combine adjacent rectangles
+            for (let i = 0; i < freeRectangles.length; i++) {
+                const rect = freeRectangles[i];
+                for (let j = i + 1; j < freeRectangles.length; j++) {
+                    const other = freeRectangles[j];
+
+                    // Check if other is fully contained in rect
+                    if (other.x >= rect.x &&
+                        other.y >= rect.y &&
+                        other.x + other.width <= rect.x + rect.width &&
+                        other.y + other.height <= rect.y + rect.height) {
+                        freeRectangles.splice(j, 1);
+                        j--;
+                    }
+                }
+            }
+        }
+
+        // Get paper dimensions in px
         const paperWpx = parseFloat(document.getElementById("paperWidth").value) * conversionFactors[currentUnit];
         const paperHpx = parseFloat(document.getElementById("paperHeight").value) * conversionFactors[currentUnit];
 
-        // layout frames with normal orientation
-        const normalResult = layoutWithTargetWidth(paperWpx);
+        // Try both orientations
+        const normalResult = maximalRectanglesPacking(paperWpx);
         const normalArea = normalResult.usedWidth * normalResult.usedHeight;
 
-        // layout frames with swapped orientation
-        const swappedResult = layoutWithTargetWidth(paperHpx);
+        const swappedResult = maximalRectanglesPacking(paperHpx);
         const swappedArea = swappedResult.usedWidth * swappedResult.usedHeight;
 
-        // pick smaller bounding area
-        let finalWpx, finalHpx, finalLayout;
+        // Pick the better layout
+        let finalLayout, finalWpx, finalHpx;
         if (swappedArea < normalArea) {
+            finalLayout = swappedResult.layoutFrames;
             finalWpx = swappedResult.usedWidth;
             finalHpx = swappedResult.usedHeight;
-            finalLayout = swappedResult.layoutFrames;
         } else {
+            finalLayout = normalResult.layoutFrames;
             finalWpx = normalResult.usedWidth;
             finalHpx = normalResult.usedHeight;
-            finalLayout = normalResult.layoutFrames;
         }
 
-        // Apply the best layout from the simulation
+        // Apply the best layout
         finalLayout.forEach((f, i) => {
             const element = frames[i].element;
 
@@ -656,37 +853,47 @@
             element.style.left = f.posX + "px";
             element.style.top = f.posY + "px";
 
-            // Check if rotation was applied
-            const isRotated = f.usedWidth !== f.origWidth;
-
-            if (isRotated) {
+            if (f.rotated) {
+                // For rotated elements
                 element.style.transform = "rotate(90deg)";
+                element.style.transformOrigin = "center";
                 element.style.width = f.usedWidth + "px";
                 element.style.height = f.usedHeight + "px";
 
                 // Update table row if it exists
                 const row = document.getElementById(element.id + "-row");
                 if (row) {
-                    row.cells[1].textContent = f.usedWidth;
-                    row.cells[2].textContent = f.usedHeight;
+                    row.cells[1].textContent = (f.usedWidth / conversionFactors[currentUnit]).toFixed(2);
+                    row.cells[2].textContent = (f.usedHeight / conversionFactors[currentUnit]).toFixed(2);
+                    row.cells[4].querySelector(".rotate-value").textContent = "90°";
+                    row.cells[4].querySelector(".rotate-slider").value = 90;
                 }
             } else {
+                // For non-rotated elements
                 element.style.transform = "rotate(0deg)";
-                element.style.width = f.origWidth + "px";
-                element.style.height = f.origHeight + "px";
+                element.style.width = f.usedWidth + "px";
+                element.style.height = f.usedHeight + "px";
+
+                // Update table row if it exists
+                const row = document.getElementById(element.id + "-row");
+                if (row) {
+                    row.cells[4].querySelector(".rotate-value").textContent = "0°";
+                    row.cells[4].querySelector(".rotate-slider").value = 0;
+                }
             }
         });
 
-        // set final paper dimensions
+        // Set final paper dimensions
         paper.style.width = finalWpx + "px";
         paper.style.height = finalHpx + "px";
 
-        // display final size in current unit
+        // Display final size in current unit
         const displayedW = finalWpx / conversionFactors[currentUnit];
         const displayedH = finalHpx / conversionFactors[currentUnit];
         const paperSizeOutput = document.getElementById("paperSizeOutput");
         paperSizeOutput.textContent = `Paper Size: ${displayedW.toFixed(2)} ${currentUnit} x ${displayedH.toFixed(2)} ${currentUnit}`;
     }
+
 
 
     function makeDraggable(element) {
