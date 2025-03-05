@@ -572,32 +572,48 @@
             let rowHeight = 0;
             let maxX = 0;
 
-            frames.forEach(f => {
+            // Create a copy of frames to manipulate
+            const layoutFrames = frames.map(f => ({...f}));
+
+            layoutFrames.forEach(f => {
                 let usedW = f.origWidth, usedH = f.origHeight;
-                let appliedRotation = 0;
 
                 if (allowRotation) {
-                    const normalFits = currentX + usedW + margin <= targetW;
-                    const rotatedFits = currentX + usedH + margin <= targetW;
-                    if (!normalFits && rotatedFits) {
+                    // Check if we need to start a new row first
+                    if (currentX + usedW + margin > targetW && currentX + usedH + margin <= targetW) {
+                        // Rotation works better than starting new row
                         [usedW, usedH] = [usedH, usedW];
-                        appliedRotation = 90;
-                    } else if (normalFits && rotatedFits) {
-                        // pick orientation that yields smaller rowHeight
+                    } else if (currentX + usedW + margin > targetW) {
+                        // Need to start a new row regardless
+                        currentY += rowHeight + margin;
+                        currentX = margin;
+                        rowHeight = 0;
+
+                        // After moving to a new row, check if rotation is beneficial
+                        if (usedW > usedH && currentX + usedH + margin <= targetW) {
+                            [usedW, usedH] = [usedH, usedW];
+                        }
+                    } else if (currentX + usedW + margin <= targetW && currentX + usedH + margin <= targetW) {
+                        // Both orientations fit, choose the one that minimizes row height
                         const rowHIfNormal = Math.max(rowHeight, usedH);
                         const rowHIfRotated = Math.max(rowHeight, usedW);
                         if (rowHIfRotated < rowHIfNormal) {
                             [usedW, usedH] = [usedH, usedW];
-                            appliedRotation = 90;
                         }
                     }
-                }
-
-                if (currentX + usedW + margin > targetW) {
+                } else if (currentX + usedW + margin > targetW) {
+                    // No rotation allowed, just move to next row
                     currentY += rowHeight + margin;
                     currentX = margin;
                     rowHeight = 0;
                 }
+
+                // Update position tracking
+                f.usedWidth = usedW;
+                f.usedHeight = usedH;
+                f.posX = currentX;
+                f.posY = currentY;
+
                 currentX += usedW + margin;
                 rowHeight = Math.max(rowHeight, usedH);
                 maxX = Math.max(maxX, currentX);
@@ -605,7 +621,7 @@
 
             const usedWidth = maxX;
             const usedHeight = currentY + rowHeight + margin;
-            return { usedWidth, usedHeight };
+            return { usedWidth, usedHeight, layoutFrames };
         }
 
         // get paper dims in px
@@ -621,89 +637,44 @@
         const swappedArea = swappedResult.usedWidth * swappedResult.usedHeight;
 
         // pick smaller bounding area
-        let finalWpx, finalHpx, chosenTargetW;
+        let finalWpx, finalHpx, finalLayout;
         if (swappedArea < normalArea) {
             finalWpx = swappedResult.usedWidth;
             finalHpx = swappedResult.usedHeight;
-            chosenTargetW = paperHpx; // we used the paper height as "width"
+            finalLayout = swappedResult.layoutFrames;
         } else {
             finalWpx = normalResult.usedWidth;
             finalHpx = normalResult.usedHeight;
-            chosenTargetW = paperWpx; // normal orientation
+            finalLayout = normalResult.layoutFrames;
         }
 
-        // second pass: place frames absolutely with the chosen orientation
-        let currentX = margin;
-        let currentY = margin;
-        let rowHeight = 0;
-        let maxX = 0;
+        // Apply the best layout from the simulation
+        finalLayout.forEach((f, i) => {
+            const element = frames[i].element;
 
-        frames.forEach(f => {
-            let usedW = f.origWidth, usedH = f.origHeight;
-            let appliedRotation = 0;
-            if (allowRotation) {
-                // Check if normal orientation fits this row
-                let canFitNormal = (currentX + usedW + margin <= chosenTargetW);
-                // Check if rotated orientation fits this row
-                let canFitRotated = (currentX + usedH + margin <= chosenTargetW);
+            // Set position
+            element.style.left = f.posX + "px";
+            element.style.top = f.posY + "px";
 
-                // If neither fits, break row first, then re-check
-                if (!canFitNormal && !canFitRotated) {
-                    // Move to new row
-                    currentY += rowHeight + margin;
-                    currentX = margin;
-                    rowHeight = 0;
+            // Check if rotation was applied
+            const isRotated = f.usedWidth !== f.origWidth;
 
-                    // Re-check now that we're in a fresh row
-                    canFitNormal = (currentX + usedW + margin <= chosenTargetW);
-                    canFitRotated = (currentX + usedH + margin <= chosenTargetW);
-                }
+            if (isRotated) {
+                element.style.transform = "rotate(90deg)";
+                element.style.width = f.usedWidth + "px";
+                element.style.height = f.usedHeight + "px";
 
-                // Now pick the best orientation if both fit:
-                if (canFitNormal && canFitRotated) {
-                    // If both fit, choose whichever yields a smaller rowHeight
-                    const rowHIfNormal = Math.max(rowHeight, usedH);
-                    const rowHIfRotated = Math.max(rowHeight, usedW);
-                    if (rowHIfRotated < rowHIfNormal) {
-                        [usedW, usedH] = [usedH, usedW];
-                        appliedRotation = 90;
-                    }
-                }
-                // If normal doesn't fit but rotated does, rotate
-                else if (!canFitNormal && canFitRotated) {
-                    [usedW, usedH] = [usedH, usedW];
-                    appliedRotation = 90;
-                }
-            }
-
-            if (currentX + usedW + margin > chosenTargetW) {
-                currentY += rowHeight + margin;
-                currentX = margin;
-                rowHeight = 0;
-            }
-
-            // place the frame
-            f.element.style.left = currentX + "px";
-            f.element.style.top = currentY + "px";
-            if (appliedRotation) {
-                f.element.style.transform = `rotate(${appliedRotation}deg)`;
-                f.element.style.width = usedW + "px";
-                f.element.style.height = usedH + "px";
-                const row = document.getElementById(f.element.id + "-row");
+                // Update table row if it exists
+                const row = document.getElementById(element.id + "-row");
                 if (row) {
-                    row.cells[1].textContent = usedW;
-                    row.cells[2].textContent = usedH;
+                    row.cells[1].textContent = f.usedWidth;
+                    row.cells[2].textContent = f.usedHeight;
                 }
             } else {
-                f.element.style.transform = "rotate(0deg)";
-                // fix: ensure no syntax error
-                f.element.style.width = f.origWidth + "px";
-                f.element.style.height = f.origHeight + "px";
+                element.style.transform = "rotate(0deg)";
+                element.style.width = f.origWidth + "px";
+                element.style.height = f.origHeight + "px";
             }
-
-            currentX += usedW + margin;
-            rowHeight = Math.max(rowHeight, usedH);
-            maxX = Math.max(maxX, currentX);
         });
 
         // set final paper dimensions
@@ -716,6 +687,7 @@
         const paperSizeOutput = document.getElementById("paperSizeOutput");
         paperSizeOutput.textContent = `Paper Size: ${displayedW.toFixed(2)} ${currentUnit} x ${displayedH.toFixed(2)} ${currentUnit}`;
     }
+
 
     function makeDraggable(element) {
         let initialX, initialY;
