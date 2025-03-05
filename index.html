@@ -642,18 +642,37 @@
             let usedW = f.origWidth, usedH = f.origHeight;
             let appliedRotation = 0;
             if (allowRotation) {
-                const normalFits = currentX + usedW + margin <= chosenTargetW;
-                const rotatedFits = currentX + usedH + margin <= chosenTargetW;
-                if (!normalFits && rotatedFits) {
-                    [usedW, usedH] = [usedH, usedW];
-                    appliedRotation = 90;
-                } else if (normalFits && rotatedFits) {
+                // Check if normal orientation fits this row
+                let canFitNormal = (currentX + usedW + margin <= chosenTargetW);
+                // Check if rotated orientation fits this row
+                let canFitRotated = (currentX + usedH + margin <= chosenTargetW);
+
+                // If neither fits, break row first, then re-check
+                if (!canFitNormal && !canFitRotated) {
+                    // Move to new row
+                    currentY += rowHeight + margin;
+                    currentX = margin;
+                    rowHeight = 0;
+
+                    // Re-check now that we're in a fresh row
+                    canFitNormal = (currentX + usedW + margin <= chosenTargetW);
+                    canFitRotated = (currentX + usedH + margin <= chosenTargetW);
+                }
+
+                // Now pick the best orientation if both fit:
+                if (canFitNormal && canFitRotated) {
+                    // If both fit, choose whichever yields a smaller rowHeight
                     const rowHIfNormal = Math.max(rowHeight, usedH);
                     const rowHIfRotated = Math.max(rowHeight, usedW);
                     if (rowHIfRotated < rowHIfNormal) {
                         [usedW, usedH] = [usedH, usedW];
                         appliedRotation = 90;
                     }
+                }
+                // If normal doesn't fit but rotated does, rotate
+                else if (!canFitNormal && canFitRotated) {
+                    [usedW, usedH] = [usedH, usedW];
+                    appliedRotation = 90;
                 }
             }
 
