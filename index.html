@@ -551,7 +551,6 @@
 
     document.getElementById("organizeBtn").addEventListener("click", organizeFrames);
 
-    // *** ADDED code to try swapping paper's width & height for minimal bounding area ***
     function organizeFrames() {
         const marginInputVal = parseFloat(document.getElementById("marginInput").value) || 0;
         const margin = marginInputVal * conversionFactors[currentUnit];
@@ -588,6 +587,7 @@
             }];
 
             let binHeight = margin; // Start with margin at the top
+            let maxRightEdge = margin; // Track the rightmost edge of all placed frames
 
             // Place each frame
             layoutFrames.forEach(frame => {
@@ -605,6 +605,9 @@
                     // Update bin height - add margin to placement height for boundary
                     binHeight = Math.max(binHeight, placement.y + placement.height + margin);
 
+                    // Update max right edge
+                    maxRightEdge = Math.max(maxRightEdge, placement.x + placement.width + margin);
+
                     // Update free rectangles - note that we include margin in the space taken
                     placeRectangle({
                         x: placement.x - margin,  // Expand by margin for spacing
@@ -620,6 +623,9 @@
                     frame.usedHeight = frame.origHeight;
                     frame.rotated = false;
 
+                    // Update max right edge
+                    maxRightEdge = Math.max(maxRightEdge, frame.posX + frame.origWidth + margin);
+
                     binHeight += frame.origHeight + margin;
 
                     // Create new free rectangles on the sides of this one (include margin in used space)
@@ -634,8 +640,11 @@
                 }
             });
 
+            // Calculate actual needed width (at least the margin + maxRightEdge)
+            const actualNeededWidth = Math.min(binWidth, maxRightEdge);
+
             return {
-                usedWidth: binWidth,
+                usedWidth: actualNeededWidth,
                 usedHeight: binHeight,
                 layoutFrames: layoutFrames
             };
@@ -896,6 +905,7 @@
         const paperSizeOutput = document.getElementById("paperSizeOutput");
         paperSizeOutput.textContent = `Paper Size: ${displayedW.toFixed(2)} ${currentUnit} x ${displayedH.toFixed(2)} ${currentUnit}`;
     }
+
 
 
 
