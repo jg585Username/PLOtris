@@ -580,7 +580,6 @@
             const layoutFrames = JSON.parse(JSON.stringify(frames));
 
             // Initialize with a single maximal rectangle covering the entire bin
-            // Note: we start with margin on all sides
             const freeRectangles = [{
                 x: margin,
                 y: margin,
@@ -679,7 +678,6 @@
                 const width = bestRotated ? frame.origHeight : frame.origWidth;
                 const height = bestRotated ? frame.origWidth : frame.origHeight;
 
-                // Position includes the margin so elements don't touch
                 return {
                     x: bestRect.x,
                     y: bestRect.y,
@@ -710,8 +708,6 @@
 
         // Update free rectangles after placing a rectangle
         function placeRectangle(placement, freeRectangles) {
-            // Note: placement should already include margin space around the object
-
             // Split free rectangles that overlap with the placement
             const newFreeRectangles = [];
 
@@ -804,7 +800,6 @@
             freeRectangles.sort((a, b) => (b.width * b.height) - (a.width * a.height));
 
             // This is a simplified merge that removes redundant rectangles
-            // A more complex merge could combine adjacent rectangles
             for (let i = 0; i < freeRectangles.length; i++) {
                 const rect = freeRectangles[i];
                 for (let j = i + 1; j < freeRectangles.length; j++) {
@@ -849,30 +844,38 @@
         finalLayout.forEach((f, i) => {
             const element = frames[i].element;
 
-            // Set position
-            element.style.left = f.posX + "px";
-            element.style.top = f.posY + "px";
-
             if (f.rotated) {
-                // For rotated elements
-                element.style.transform = "rotate(90deg)";
-                element.style.transformOrigin = "center";
-                element.style.width = f.usedWidth + "px";
-                element.style.height = f.usedHeight + "px";
+                // For rotated elements, we need to adjust the position and dimensions
+                // to compensate for how CSS transforms work
+
+                // When rotating 90 degrees, we need to:
+                // 1. Set width and height to the swapped dimensions
+                // 2. Use "transform-origin: top left" to rotate around top-left corner
+                // 3. Adjust positioning to account for the rotation
+
+                element.style.width = f.usedHeight + "px"; // Note: we swap width/height
+                element.style.height = f.usedWidth + "px";
+                element.style.left = f.posX + "px";
+                element.style.top = f.posY + "px";
+                element.style.transformOrigin = "top left";
+                element.style.transform = "rotate(90deg) translate(0, -100%)";
 
                 // Update table row if it exists
                 const row = document.getElementById(element.id + "-row");
                 if (row) {
-                    row.cells[1].textContent = (f.usedWidth / conversionFactors[currentUnit]).toFixed(2);
-                    row.cells[2].textContent = (f.usedHeight / conversionFactors[currentUnit]).toFixed(2);
+                    row.cells[1].textContent = (f.usedHeight / conversionFactors[currentUnit]).toFixed(2);
+                    row.cells[2].textContent = (f.usedWidth / conversionFactors[currentUnit]).toFixed(2);
                     row.cells[4].querySelector(".rotate-value").textContent = "90°";
                     row.cells[4].querySelector(".rotate-slider").value = 90;
                 }
             } else {
-                // For non-rotated elements
-                element.style.transform = "rotate(0deg)";
+                // For non-rotated elements, positioning is straightforward
                 element.style.width = f.usedWidth + "px";
                 element.style.height = f.usedHeight + "px";
+                element.style.left = f.posX + "px";
+                element.style.top = f.posY + "px";
+                element.style.transform = "rotate(0deg)";
+                element.style.transformOrigin = "center"; // reset to default
 
                 // Update table row if it exists
                 const row = document.getElementById(element.id + "-row");
@@ -893,6 +896,7 @@
         const paperSizeOutput = document.getElementById("paperSizeOutput");
         paperSizeOutput.textContent = `Paper Size: ${displayedW.toFixed(2)} ${currentUnit} x ${displayedH.toFixed(2)} ${currentUnit}`;
     }
+
 
 
 
