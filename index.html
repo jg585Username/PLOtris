@@ -177,11 +177,11 @@
         <h3 style="font-size:14px;">(use only for viewing purposes)</h3>
         <div>
             <label for="paperWidth">Width:</label>
-            <input type="number" id="paperWidth" value="32" />
+            <input type="number" id="paperWidth" value="32" min="0"/>
         </div>
         <div>
             <label for="paperHeight">Height:</label>
-            <input type="number" id="paperHeight" value="24" />
+            <input type="number" id="paperHeight" value="24" min="0"/>
         </div>
         <div>
             <label for="paperUnit">Unit:</label>
@@ -204,11 +204,11 @@
         </div>
         <div>
             <label for="frameWidth">Width:</label>
-            <input type="number" id="frameWidth" value="10" />
+            <input type="number" id="frameWidth" value="10" min="0"/>
         </div>
         <div>
             <label for="frameHeight">Height:</label>
-            <input type="number" id="frameHeight" value="5" />
+            <input type="number" id="frameHeight" value="5" min="0"/>
         </div>
         <div>
             <label for="frameUnit">Unit:</label>
@@ -228,7 +228,7 @@
         <h2>Organize</h2>
         <div>
             <label for="marginInput">Margin:</label>
-            <input type="number" id="marginInput" value="1" />
+            <input type="number" id="marginInput" value="1" min="0"/>
             <select id="marginUnit">
                 <option value="px" >px</option>
                 <option value="cm">cm</option>
@@ -512,12 +512,17 @@
     function allowOnlyNumbers(e) {
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         if (["ArrowLeft", "ArrowRight", "Backspace", "Delete"].includes(e.key)) return;
-        const currentValue = e.target.textContent;
-        if (!/[0-9]/.test(e.key)) {
-            if (e.key === "." && currentValue.indexOf(".") === -1) return;
+        const currentValue = e.target.textContent || "";
+        if (e.key === "-" || e.key === "–") {
             e.preventDefault();
+            return;
         }
+        if (/[0-9]/.test(e.key)) return;
+        if (e.key === "." && currentValue.indexOf(".") === -1) return;
+        e.preventDefault();
     }
+
+    // Updated filterPaste function
     function filterPaste(e) {
         e.preventDefault();
         const text = (e.clipboardData || window.clipboardData).getData("text");
@@ -907,6 +912,29 @@
         const paperSizeOutput = document.getElementById("paperSizeOutput");
         paperSizeOutput.textContent = `Paper Size: ${displayedW.toFixed(2)} ${currentUnit} x ${displayedH.toFixed(2)} ${currentUnit}`;
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // For all input[type="number"] elements
+        const numericInputs = document.querySelectorAll('input[type="number"]');
+        numericInputs.forEach(input => {
+            // Set min attribute to 0 to prevent negative values
+            input.setAttribute('min', '0');
+
+            // Add event handler for direct entry validation
+            input.addEventListener('input', function() {
+                if (this.value < 0) {
+                    this.value = 0;
+                }
+            });
+
+            // Prevent minus key
+            input.addEventListener('keydown', function(e) {
+                if (e.key === '-' || e.key === 'e') {
+                    e.preventDefault();
+                }
+            });
+        });
+    });
 
 
 
