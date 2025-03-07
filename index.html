@@ -166,6 +166,31 @@
             display: inline-block;
             background: #edf7f7;
         }
+
+        /* Styles for frame size display */
+        .frame-size-display {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            color: #333;
+            pointer-events: none; /* Make sure it doesn't interfere with dragging */
+            white-space: nowrap;
+            z-index: 5;
+        }
+
+        /* Toggle button for showing/hiding measurements */
+        #toggleFrameSizes {
+            margin-left: 10px;
+            background: #6c757d;
+        }
+        #toggleFrameSizes:hover {
+            background: #5a6268;
+        }
+
     </style>
 </head>
 <body>
@@ -244,6 +269,7 @@
             </label>
         </div>
         <button id="organizeBtn">Organize</button>
+        <button id="toggleFrameSizes">Show/Hide Sizes</button>
         <div id="paperSizeOutput"></div>
     </div>
 </div>
@@ -340,6 +366,7 @@
         document.getElementById("marginUnit").value = newUnit;
         updateScaleInfo();
         updateMarginScaleInfo();
+        updateAllFrameSizeDisplays();
     }
 
     document.getElementById("paperUnit").addEventListener("change", function() {
@@ -489,6 +516,7 @@
                 if (frameElem) {
                     frameElem.style.width = newWidthPx + "px";
                     frameElem.dataset.origWidth = newWidthPx;
+                    updateFrameSizeDisplay(frameElem);
                 }
             } else {
                 this.textContent = frameWidthInput;
@@ -502,11 +530,13 @@
                 if (frameElem) {
                     frameElem.style.height = newHeightPx + "px";
                     frameElem.dataset.origHeight = newHeightPx;
+                    updateFrameSizeDisplay(frameElem);
                 }
             } else {
                 this.textContent = frameHeightInput;
             }
         });
+        updateFrameSizeDisplay(frame);
     });
 
     function allowOnlyNumbers(e) {
@@ -911,6 +941,7 @@
         const displayedH = finalHpx / conversionFactors[currentUnit];
         const paperSizeOutput = document.getElementById("paperSizeOutput");
         paperSizeOutput.textContent = `Paper Size: ${displayedW.toFixed(2)} ${currentUnit} x ${displayedH.toFixed(2)} ${currentUnit}`;
+        updateAllFrameSizeDisplays();
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -936,6 +967,58 @@
         });
     });
 
+    // Global variable to track if size display is enabled
+    let showFrameSizes = true;
+
+    // Function to create or update the size display for a frame
+    function updateFrameSizeDisplay(frame) {
+        // Get the frame's dimensions in the current unit
+        const widthPx = parseFloat(frame.style.width);
+        const heightPx = parseFloat(frame.style.height);
+        const widthInUnit = (widthPx / conversionFactors[currentUnit]).toFixed(2);
+        const heightInUnit = (heightPx / conversionFactors[currentUnit]).toFixed(2);
+
+        // Check if the frame already has a size display
+        let sizeDisplay = frame.querySelector('.frame-size-display');
+
+        // If no display exists and showing is enabled, create one
+        if (!sizeDisplay && showFrameSizes) {
+            sizeDisplay = document.createElement('div');
+            sizeDisplay.className = 'frame-size-display';
+            frame.appendChild(sizeDisplay);
+        }
+
+        // If sizeDisplay exists, update its content
+        if (sizeDisplay) {
+            sizeDisplay.textContent = `${widthInUnit} × ${heightInUnit} ${currentUnit}`;
+            sizeDisplay.style.display = showFrameSizes ? 'block' : 'none';
+
+            // Adjust position if frame is rotated
+            let transform = frame.style.transform;
+            if (transform.includes('rotate(90deg)')) {
+                sizeDisplay.style.transform = 'rotate(-90deg)';
+                sizeDisplay.style.transformOrigin = 'left top';
+                sizeDisplay.style.top = '50%';
+                sizeDisplay.style.left = '10px';
+            } else {
+                sizeDisplay.style.transform = '';
+                sizeDisplay.style.top = '5px';
+                sizeDisplay.style.left = '5px';
+            }
+        }
+    }
+
+    // Function to update all frame size displays
+    function updateAllFrameSizeDisplays() {
+        const frames = document.querySelectorAll('.frame');
+        frames.forEach(frame => updateFrameSizeDisplay(frame));
+    }
+
+    // Toggle visibility of all frame size displays
+    function toggleFrameSizes() {
+        showFrameSizes = !showFrameSizes;
+        updateAllFrameSizeDisplays();
+    }
 
 
 
@@ -971,8 +1054,12 @@
         function dragEnd() {
             element.classList.remove("dragging");
             element.style.zIndex = "";
+            updateFrameSizeDisplay(element);
         }
     }
+
+    // Add event listener for the toggle button
+    document.getElementById('toggleFrameSizes').addEventListener('click', toggleFrameSizes);
 </script>
 </body>
 </html>
