@@ -1085,6 +1085,7 @@
     }
 
     // Main function to generate alignment lines
+    // Modified function to generate alignment lines
     function generateAlignmentLines() {
         if (!showAlignmentLines) return;
 
@@ -1111,12 +1112,71 @@
             };
         });
 
-        // Find spaces for horizontal lines (between rows of frames)
-        generateHorizontalLines(frameRects);
+        // Identify all unique horizontal and vertical positions
+        const xPositions = new Set();
+        const yPositions = new Set();
 
-        // Find spaces for vertical lines (between columns of frames)
-        generateVerticalLines(frameRects);
+        frameRects.forEach(rect => {
+            // Add positions with a small offset to create lines between frames
+            xPositions.add(rect.left);
+            xPositions.add(rect.right);
+            yPositions.add(rect.top);
+            yPositions.add(rect.bottom);
+        });
+
+        // Sort positions
+        const sortedX = Array.from(xPositions).sort((a, b) => a - b);
+        const sortedY = Array.from(yPositions).sort((a, b) => a - b);
+
+        // Generate horizontal lines between frames
+        for (let i = 0; i < sortedY.length; i++) {
+            const y = sortedY[i];
+
+            // Skip if this is a position that intersects a frame
+            let isValidLine = true;
+            for (const rect of frameRects) {
+                // Check if this y position intersects with a frame
+                if (y > rect.top && y < rect.bottom) {
+                    isValidLine = false;
+                    break;
+                }
+            }
+
+            if (isValidLine) {
+                // Create a horizontal line across the entire paper
+                createAlignmentLine(
+                    { x: 0, y: y },
+                    { x: parseInt(paper.style.width) || paper.clientWidth, y: y },
+                    'horizontal'
+                );
+            }
+        }
+
+        // Generate vertical lines between frames
+        for (let i = 0; i < sortedX.length; i++) {
+            const x = sortedX[i];
+
+            // Skip if this is a position that intersects a frame
+            let isValidLine = true;
+            for (const rect of frameRects) {
+                // Check if this x position intersects with a frame
+                if (x > rect.left && x < rect.right) {
+                    isValidLine = false;
+                    break;
+                }
+            }
+
+            if (isValidLine) {
+                // Create a vertical line across the entire paper
+                createAlignmentLine(
+                    { x: x, y: 0 },
+                    { x: x, y: parseInt(paper.style.height) || paper.clientHeight },
+                    'vertical'
+                );
+            }
+        }
     }
+
 
     // Function to generate horizontal alignment lines
     function generateHorizontalLines(frameRects) {
