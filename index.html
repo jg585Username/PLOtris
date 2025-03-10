@@ -190,7 +190,40 @@
         #toggleFrameSizes:hover {
             background: #5a6268;
         }
+        .alignment-line {
+            position: absolute;
+            background-color: transparent;
+            border: 1px dashed #666;
+            pointer-events: none; /* Make sure it doesn't interfere with interactions */
+            z-index: 2;
+        }
 
+        .alignment-line.horizontal {
+            height: 0;
+            border-top-style: dashed;
+            border-bottom: none;
+        }
+
+        .alignment-line.vertical {
+            width: 0;
+            border-left-style: dashed;
+            border-right: none;
+        }
+
+        /* Toggle button for alignment lines */
+        #toggleAlignmentLines {
+            margin-left: 10px;
+            background: #28a745;
+        }
+        #toggleAlignmentLines:hover {
+            background: #218838;
+        }
+
+        .line-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -268,10 +301,14 @@
                 Allow 90° rotations for optimal packing
             </label>
         </div>
-        <button id="organizeBtn">Organize</button>
-        <button id="toggleFrameSizes">Show/Hide Sizes</button>
+        <div class="line-controls">
+            <button id="organizeBtn">Organize</button>
+            <button id="toggleFrameSizes">Show/Hide Sizes</button>
+            <button id="toggleAlignmentLines">Show/Hide Alignment Lines</button>
+        </div>
         <div id="paperSizeOutput"></div>
     </div>
+
 </div>
 
 <div id="paper" style="width:800px; height:600px;"></div>
@@ -565,7 +602,7 @@
         if (frame) paper.removeChild(frame);
         const row = document.getElementById(frameId + "-row");
         if (row) frameList.removeChild(row);
-        frameHistory = frameHistory.filter(id => id !== frameId);
+        frameHistory = frameHistory.filter(id => id !== frameId);setTimeout(generateAlignmentLines, 100);
     }
 
     document.getElementById("deleteAllFrames").addEventListener("click", () => {
@@ -574,7 +611,7 @@
         }
         frameList.innerHTML = "";
         frameHistory = [];
-        frameCount = 0;
+        frameCount = 0;clearAlignmentLines();
     });
 
     document.getElementById("undoAction").addEventListener("click", () => {
@@ -941,7 +978,7 @@
         const displayedH = finalHpx / conversionFactors[currentUnit];
         const paperSizeOutput = document.getElementById("paperSizeOutput");
         paperSizeOutput.textContent = `Paper Size: ${displayedW.toFixed(2)} ${currentUnit} x ${displayedH.toFixed(2)} ${currentUnit}`;
-        updateAllFrameSizeDisplays();
+        updateAllFrameSizeDisplays();setTimeout(generateAlignmentLines, 100);
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -1020,6 +1057,191 @@
         updateAllFrameSizeDisplays();
     }
 
+    // Global variable to track if alignment lines are visible
+    let showAlignmentLines = true;
+
+    // Function to clear all existing alignment lines
+    function clearAlignmentLines() {
+        const lines = document.querySelectorAll('.alignment-line');
+        lines.forEach(line => line.remove());
+    }
+
+    // Function to create an alignment line
+    function createAlignmentLine(start, end, type) {
+        const line = document.createElement('div');
+        line.className = `alignment-line ${type}`;
+
+        if (type === 'horizontal') {
+            line.style.left = `${start.x}px`;
+            line.style.top = `${start.y}px`;
+            line.style.width = `${end.x - start.x}px`;
+        } else if (type === 'vertical') {
+            line.style.left = `${start.x}px`;
+            line.style.top = `${start.y}px`;
+            line.style.height = `${end.y - start.y}px`;
+        }
+
+        paper.appendChild(line);
+    }
+
+    // Main function to generate alignment lines
+    function generateAlignmentLines() {
+        if (!showAlignmentLines) return;
+
+        // Clear existing lines
+        clearAlignmentLines();
+
+        const frames = Array.from(document.querySelectorAll('.frame'));
+        if (frames.length < 2) return; // Need at least 2 frames
+
+        // Extract frame positions and dimensions
+        const frameRects = frames.map(frame => {
+            const rect = frame.getBoundingClientRect();
+            const paperRect = paper.getBoundingClientRect();
+
+            // Convert to coordinates relative to the paper container
+            return {
+                left: rect.left - paperRect.left,
+                right: rect.right - paperRect.left,
+                top: rect.top - paperRect.top,
+                bottom: rect.bottom - paperRect.top,
+                width: rect.width,
+                height: rect.height,
+                element: frame
+            };
+        });
+
+        // Find spaces for horizontal lines (between rows of frames)
+        generateHorizontalLines(frameRects);
+
+        // Find spaces for vertical lines (between columns of frames)
+        generateVerticalLines(frameRects);
+    }
+
+    // Function to generate horizontal alignment lines
+    function generateHorizontalLines(frameRects) {
+        // Get all unique top and bottom positions
+        const horizontalEdges = [];
+        frameRects.forEach(rect => {
+            horizontalEdges.push({
+                position: rect.top,
+                isTop: true,
+                rect: rect
+            });
+            horizontalEdges.push({
+                position: rect.bottom,
+                isTop: false,
+                rect: rect
+            });
+        });
+
+        // Sort by position
+        horizontalEdges.sort((a, b) => a.position - b.position);
+
+        // Find gaps between frames where we can draw lines
+        for (let i = 0; i < horizontalEdges.length - 1; i++) {
+            const currentEdge = horizontalEdges[i];
+            const nextEdge = horizontalEdges[i + 1];
+
+            // Skip if edges are too close
+            if (nextEdge.position - currentEdge.position < 10) continue;
+
+            // Calculate potential line position (middle of gap)
+            const lineY = (currentEdge.position + nextEdge.position) / 2;
+
+            // Make sure this line doesn't intersect any frame
+            if (isSpaceClear(frameRects, null, lineY, 'horizontal')) {
+                // Find frames to the left and right of this space to determine line length
+                const leftMostX = 0;
+                const rightMostX = parseInt(paper.style.width) || paper.clientWidth;
+
+                // Create the line
+                createAlignmentLine(
+                    { x: leftMostX, y: lineY },
+                    { x: rightMostX, y: lineY },
+                    'horizontal'
+                );
+            }
+        }
+    }
+
+    // Function to generate vertical alignment lines
+    function generateVerticalLines(frameRects) {
+        // Get all unique left and right positions
+        const verticalEdges = [];
+        frameRects.forEach(rect => {
+            verticalEdges.push({
+                position: rect.left,
+                isLeft: true,
+                rect: rect
+            });
+            verticalEdges.push({
+                position: rect.right,
+                isLeft: false,
+                rect: rect
+            });
+        });
+
+        // Sort by position
+        verticalEdges.sort((a, b) => a.position - b.position);
+
+        // Find gaps between frames where we can draw lines
+        for (let i = 0; i < verticalEdges.length - 1; i++) {
+            const currentEdge = verticalEdges[i];
+            const nextEdge = verticalEdges[i + 1];
+
+            // Skip if edges are too close
+            if (nextEdge.position - currentEdge.position < 10) continue;
+
+            // Calculate potential line position (middle of gap)
+            const lineX = (currentEdge.position + nextEdge.position) / 2;
+
+            // Make sure this line doesn't intersect any frame
+            if (isSpaceClear(frameRects, lineX, null, 'vertical')) {
+                // Find frames above and below this space to determine line length
+                const topMostY = 0;
+                const bottomMostY = parseInt(paper.style.height) || paper.clientHeight;
+
+                // Create the line
+                createAlignmentLine(
+                    { x: lineX, y: topMostY },
+                    { x: lineX, y: bottomMostY },
+                    'vertical'
+                );
+            }
+        }
+    }
+
+    // Check if a potential line position would intersect with any frames
+    function isSpaceClear(frameRects, x, y, type) {
+        for (const rect of frameRects) {
+            if (type === 'horizontal') {
+                // For horizontal lines, check if the line's y-position intersects with any frame
+                if (y > rect.top && y < rect.bottom) {
+                    return false;
+                }
+            } else if (type === 'vertical') {
+                // For vertical lines, check if the line's x-position intersects with any frame
+                if (x > rect.left && x < rect.right) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // Toggle visibility of alignment lines
+    function toggleAlignmentLines() {
+        showAlignmentLines = !showAlignmentLines;
+
+        if (showAlignmentLines) {
+            generateAlignmentLines();
+        } else {
+            clearAlignmentLines();
+        }
+    }
+    // Add event listener for the alignment lines toggle button
+    document.getElementById('toggleAlignmentLines').addEventListener('click', toggleAlignmentLines);
 
 
 
@@ -1054,9 +1276,20 @@
         function dragEnd() {
             element.classList.remove("dragging");
             element.style.zIndex = "";
-            updateFrameSizeDisplay(element);
+            updateFrameSizeDisplay(element);    setTimeout(generateAlignmentLines, 100);
         }
     }
+    // Update alignment lines on window resize
+    window.addEventListener('resize', function() {
+        if (showAlignmentLines) {
+            clearAlignmentLines();
+            setTimeout(generateAlignmentLines, 100);
+        }
+    });
+    // Generate alignment lines on initial load if there are frames
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(generateAlignmentLines, 500); // Longer timeout for initial load
+    });
 
     // Add event listener for the toggle button
     document.getElementById('toggleFrameSizes').addEventListener('click', toggleFrameSizes);
