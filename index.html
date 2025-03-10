@@ -335,6 +335,7 @@
 </div>
 
 <script>
+    let showAlignmentLines = false;
     // Global current unit state; initially "inch"
     let currentUnit = "inch";
 
@@ -623,8 +624,13 @@
         }
     });
 
-    document.getElementById("organizeBtn").addEventListener("click", organizeFrames);
-
+    document.getElementById('organizeBtn').addEventListener('click', function() {
+        organizeFrames();
+        if (showAlignmentLines) {
+            generateAlignmentLines();
+            generateCuttingGuidelines();
+        }
+    });
     function organizeFrames() {
         const marginInputVal = parseFloat(document.getElementById("marginInput").value) || 0;
         const margin = marginInputVal * conversionFactors[currentUnit];
@@ -1058,30 +1064,40 @@
     }
 
     // Global variable to track if alignment lines are visible
-    let showAlignmentLines = true;
+    showAlignmentLines = true;
 
     // Function to clear all existing alignment lines
     function clearAlignmentLines() {
-        const lines = document.querySelectorAll('.alignment-line');
-        lines.forEach(line => line.remove());
+        document.querySelectorAll('.alignment-line').forEach(line => line.remove());
     }
 
     // Function to create an alignment line
-    function createAlignmentLine(start, end, type) {
-        const line = document.createElement('div');
-        line.className = `alignment-line ${type}`;
+    function createAlignmentLine(start, end, orientation) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', start.x);
+        line.setAttribute('y1', start.y);
+        line.setAttribute('x2', end.x);
+        line.setAttribute('y2', end.y);
+        line.setAttribute('stroke', '#666');
+        line.setAttribute('stroke-width', '1');
+        line.setAttribute('stroke-dasharray', '3,3');
+        line.classList.add('alignment-line');
 
-        if (type === 'horizontal') {
-            line.style.left = `${start.x}px`;
-            line.style.top = `${start.y}px`;
-            line.style.width = `${end.x - start.x}px`;
-        } else if (type === 'vertical') {
-            line.style.left = `${start.x}px`;
-            line.style.top = `${start.y}px`;
-            line.style.height = `${end.y - start.y}px`;
+        let svg = document.getElementById('guidelinesSvg');
+        if (!svg) {
+            svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.id = 'guidelinesSvg';
+            svg.style.position = 'absolute';
+            svg.style.top = '0';
+            svg.style.left = '0';
+            svg.style.width = '100%';
+            svg.style.height = '100%';
+            svg.style.pointerEvents = 'none';
+            svg.style.zIndex = '10';
+            paper.appendChild(svg);
         }
 
-        paper.appendChild(line);
+        svg.appendChild(line);
     }
 
     // Main function to generate alignment lines
@@ -1177,6 +1193,81 @@
         }
     }
 
+    function generateCuttingGuidelines() {
+        // Remove any existing cutting guidelines
+        document.querySelectorAll('.cutting-guide').forEach(line => line.remove());
+
+        // Get all frames
+        const frames = Array.from(document.querySelectorAll('.frame'));
+        const paperRect = paper.getBoundingClientRect();
+        const marginSize = parseFloat(document.getElementById('marginInput').value);
+        const halfMargin = marginSize / 2;
+
+        const frameRects = frames.map(frame => {
+            const rect = frame.getBoundingClientRect();
+            return {
+                left: rect.left - paperRect.left,
+                right: rect.right - paperRect.left,
+                top: rect.top - paperRect.top,
+                bottom: rect.bottom - paperRect.top,
+                width: rect.width,
+                height: rect.height,
+                element: frame
+            };
+        });
+
+        // For each frame, create cutting lines at half margin distance
+        frameRects.forEach(rect => {
+            // Calculate the positions for the cutting lines (half margin away from frame)
+            createCuttingGuideline(
+                { x: rect.left - halfMargin, y: rect.top - halfMargin },
+                { x: rect.right + halfMargin, y: rect.top - halfMargin }
+            ); // Top
+
+            createCuttingGuideline(
+                { x: rect.right + halfMargin, y: rect.top - halfMargin },
+                { x: rect.right + halfMargin, y: rect.bottom + halfMargin }
+            ); // Right
+
+            createCuttingGuideline(
+                { x: rect.left - halfMargin, y: rect.bottom + halfMargin },
+                { x: rect.right + halfMargin, y: rect.bottom + halfMargin }
+            ); // Bottom
+
+            createCuttingGuideline(
+                { x: rect.left - halfMargin, y: rect.top - halfMargin },
+                { x: rect.left - halfMargin, y: rect.bottom + halfMargin }
+            ); // Left
+        });
+    }
+
+    function createCuttingGuideline(start, end) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', start.x);
+        line.setAttribute('y1', start.y);
+        line.setAttribute('x2', end.x);
+        line.setAttribute('y2', end.y);
+        line.setAttribute('stroke', 'red');
+        line.setAttribute('stroke-width', '1');
+        line.setAttribute('stroke-dasharray', '3,3');
+        line.classList.add('cutting-guide');
+
+        let svg = document.getElementById('guidelinesSvg');
+        if (!svg) {
+            svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.id = 'guidelinesSvg';
+            svg.style.position = 'absolute';
+            svg.style.top = '0';
+            svg.style.left = '0';
+            svg.style.width = '100%';
+            svg.style.height = '100%';
+            svg.style.pointerEvents = 'none';
+            svg.style.zIndex = '10';
+            paper.appendChild(svg);
+        }
+
+        svg.appendChild(line);
+    }
 
     // Function to generate horizontal alignment lines
     function generateHorizontalLines(frameRects) {
@@ -1301,8 +1392,16 @@
         }
     }
     // Add event listener for the alignment lines toggle button
-    document.getElementById('toggleAlignmentLines').addEventListener('click', toggleAlignmentLines);
-
+    document.getElementById('toggleAlignmentLines').addEventListener('click', function() {
+        showAlignmentLines = !showAlignmentLines;
+        if (showAlignmentLines) {
+            generateAlignmentLines();
+            generateCuttingGuidelines();
+        } else {
+            clearAlignmentLines();
+            document.querySelectorAll('.cutting-guide').forEach(line => line.remove());
+        }
+    });
 
 
     function makeDraggable(element) {
