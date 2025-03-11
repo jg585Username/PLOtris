@@ -224,6 +224,26 @@
             gap: 10px;
             margin-top: 10px;
         }
+
+        .rotation-buttons {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .rotate-btn {
+            padding: 2px 5px;
+            background-color: #ff5733;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .rotate-btn:hover {
+            background-color: #e0e0e0;
+        }
+
     </style>
 </head>
 <body>
@@ -506,10 +526,38 @@
       <td>
         <input type="range" min="0" max="360" value="0" data-frame-id="${frameId}" class="rotate-slider">
         <span class="rotate-value">0°</span>
+            <div class="rotation-buttons">
+      <button class="rotate-btn" data-angle="90" data-frame-id="${frameId}">90°</button>
+      <button class="rotate-btn" data-angle="180" data-frame-id="${frameId}">180°</button>
+      <button class="rotate-btn" data-angle="270" data-frame-id="${frameId}">270°</button>
+    </div>
       </td>
       <td><button class="delete-btn" data-frame-id="${frameId}">Delete</button></td>
     `;
         frameList.appendChild(row);
+// Add this after creating the rotation buttons
+        const rotationButtons = row.querySelectorAll(".rotate-btn");
+        rotationButtons.forEach(btn => {
+            btn.addEventListener("click", function() {
+                const angle = parseInt(this.getAttribute("data-angle"));
+                const frameId = this.getAttribute("data-frame-id");
+                const frame = document.getElementById(frameId);
+
+                // Update the frame rotation
+                frame.style.transform = `rotate(${angle}deg)`;
+
+                // Update the slider and display value to match
+                const slider = row.querySelector(".rotate-slider");
+                const rotateValue = row.querySelector(".rotate-value");
+                slider.value = angle;
+                rotateValue.textContent = `${angle}°`;
+
+                // If you have alignment lines, update them
+                if (typeof showAlignmentLines !== 'undefined' && showAlignmentLines) {
+                    setTimeout(generateAlignmentLines, 100);
+                }
+            });
+        });
 
         const deleteBtn = row.querySelector(".delete-btn");
         deleteBtn.addEventListener("click", function () {
@@ -1471,6 +1519,31 @@
 
     // Add event listener for the toggle button
     document.getElementById('toggleFrameSizes').addEventListener('click', toggleFrameSizes);
+
+    // Add this after setting up the slider event listener
+    const rotationButtons = row.querySelectorAll(".rotate-btn");
+    rotationButtons.forEach(btn => {
+        btn.addEventListener("click", function() {
+            const angle = parseInt(this.getAttribute("data-angle"));
+            const frameId = this.getAttribute("data-frame-id");
+            const frame = document.getElementById(frameId);
+
+            // Update the frame rotation
+            frame.style.transform = `rotate(${angle}deg)`;
+
+            // Update the slider and display value to match
+            const slider = row.querySelector(".rotate-slider");
+            const rotateValue = row.querySelector(".rotate-value");
+            slider.value = angle;
+            rotateValue.textContent = `${angle}°`;
+
+            // If showing alignment lines, regenerate them
+            if (showAlignmentLines) {
+                setTimeout(generateAlignmentLines, 100);
+            }
+        });
+    });
+
 </script>
 </body>
 </html>
