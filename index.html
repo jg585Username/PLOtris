@@ -1240,7 +1240,6 @@
             }
         }
     }
-
     function generateCuttingGuidelines() {
         // Remove any existing cutting guidelines
         document.querySelectorAll('.cutting-guide').forEach(line => line.remove());
@@ -1288,6 +1287,8 @@
             ); // Left
         });
     }
+
+
 
     function createCuttingGuideline(start, end) {
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -1502,8 +1503,8 @@
                 // Check if we need to resize the paper
                 if (rightEdge > currentPaperWidth || bottomEdge > currentPaperHeight) {
                     // Resize paper to fit the frame with some padding
-                    const newWidth = Math.max(currentPaperWidth, rightEdge + 20);
-                    const newHeight = Math.max(currentPaperHeight, bottomEdge + 20);
+                    const newWidth = Math.max(currentPaperWidth, rightEdge + 2);
+                    const newHeight = Math.max(currentPaperHeight, bottomEdge + 2);
 
                     paper.style.width = newWidth + "px";
                     paper.style.height = newHeight + "px";
@@ -1554,8 +1555,8 @@
             });
 
             // Add padding
-            maxRight += 20;
-            maxBottom += 20;
+            maxRight += 2;
+            maxBottom += 2;
 
             // Set minimum dimensions
             const minWidth = 100;
