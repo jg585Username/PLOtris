@@ -1415,6 +1415,7 @@
             initialY = e.clientY - parseInt(element.style.top, 10);
             element.classList.add("dragging");
             element.style.zIndex = 1000;
+            e.stopPropagation(); // Prevent other handlers from firing
         }
 
         function drag(e) {
@@ -1423,10 +1424,26 @@
                 let newY = e.clientY - initialY;
                 const parentWidth = paper.clientWidth;
                 const parentHeight = paper.clientHeight;
-                const frameWidth = element.offsetWidth;
-                const frameHeight = element.offsetHeight;
+
+                // Check if element is rotated 90 degrees
+                const isRotated = element.style.transform.includes('rotate(90deg)');
+
+                // Get the correct dimensions based on rotation state
+                let frameWidth, frameHeight;
+                if (isRotated) {
+                    // For rotated elements, the width/height are already swapped in the style
+                    // but for boundary calculation we need to consider the rotated dimensions
+                    frameWidth = element.offsetHeight; // This is the visual width after rotation
+                    frameHeight = element.offsetWidth; // This is the visual height after rotation
+                } else {
+                    frameWidth = element.offsetWidth;
+                    frameHeight = element.offsetHeight;
+                }
+
+                // Apply bounds
                 newX = Math.max(0, Math.min(newX, parentWidth - frameWidth));
                 newY = Math.max(0, Math.min(newY, parentHeight - frameHeight));
+
                 element.style.left = newX + "px";
                 element.style.top = newY + "px";
             }
@@ -1435,9 +1452,11 @@
         function dragEnd() {
             element.classList.remove("dragging");
             element.style.zIndex = "";
-            updateFrameSizeDisplay(element);    setTimeout(generateAlignmentLines, 100);
+            updateFrameSizeDisplay(element);
+            setTimeout(generateAlignmentLines, 100);
         }
     }
+
     // Update alignment lines on window resize
     window.addEventListener('resize', function() {
         if (showAlignmentLines) {
