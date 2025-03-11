@@ -1459,8 +1459,8 @@
         document.addEventListener("mousemove", drag);
 
         function dragStart(e) {
-            initialX = e.clientX - parseInt(element.style.left, 10);
-            initialY = e.clientY - parseInt(element.style.top, 10);
+            initialX = e.clientX - parseInt(element.style.left || '0', 10);
+            initialY = e.clientY - parseInt(element.style.top || '0', 10);
             element.classList.add("dragging");
             element.style.zIndex = 1000;
             e.stopPropagation(); // Prevent other handlers from firing
@@ -1470,40 +1470,122 @@
             if (element.classList.contains("dragging")) {
                 let newX = e.clientX - initialX;
                 let newY = e.clientY - initialY;
-                const parentWidth = paper.clientWidth;
-                const parentHeight = paper.clientHeight;
 
-                // Check if element is rotated 90 degrees
+                // Instead of restricting to parent boundaries, allow movement and resize paper
                 const isRotated = element.style.transform.includes('rotate(90deg)');
 
                 // Get the correct dimensions based on rotation state
                 let frameWidth, frameHeight;
                 if (isRotated) {
-                    // For rotated elements, the width/height are already swapped in the style
-                    // but for boundary calculation we need to consider the rotated dimensions
-                    frameWidth = element.offsetHeight; // This is the visual width after rotation
-                    frameHeight = element.offsetWidth; // This is the visual height after rotation
+                    frameWidth = element.offsetHeight;
+                    frameHeight = element.offsetWidth;
                 } else {
                     frameWidth = element.offsetWidth;
                     frameHeight = element.offsetHeight;
                 }
 
-                // Apply bounds
-                newX = Math.max(0, Math.min(newX, parentWidth - frameWidth));
-                newY = Math.max(0, Math.min(newY, parentHeight - frameHeight));
+                // Only prevent negative positioning (below zero)
+                newX = Math.max(0, newX);
+                newY = Math.max(0, newY);
 
+                // Update frame position
                 element.style.left = newX + "px";
                 element.style.top = newY + "px";
+
+                // Resize paper if needed
+                const rightEdge = newX + frameWidth;
+                const bottomEdge = newY + frameHeight;
+
+                const currentPaperWidth = paper.clientWidth;
+                const currentPaperHeight = paper.clientHeight;
+
+                // Check if we need to resize the paper
+                if (rightEdge > currentPaperWidth || bottomEdge > currentPaperHeight) {
+                    // Resize paper to fit the frame with some padding
+                    const newWidth = Math.max(currentPaperWidth, rightEdge + 20);
+                    const newHeight = Math.max(currentPaperHeight, bottomEdge + 20);
+
+                    paper.style.width = newWidth + "px";
+                    paper.style.height = newHeight + "px";
+
+                    // If you have UI elements showing paper dimensions, update them here
+                    // updatePaperSizeDisplay(newWidth, newHeight);
+                }
+
+                // Optionally check if we can shrink the paper
+                optimizePaperSize();
             }
+            updatePaperSizeDisplay();
         }
 
         function dragEnd() {
             element.classList.remove("dragging");
             element.style.zIndex = "";
             updateFrameSizeDisplay(element);
+
+            // Final paper size optimization
+            optimizePaperSize();
+
             setTimeout(generateAlignmentLines, 100);
+            updatePaperSizeDisplay();
+        }
+
+        // Function to find optimal paper size based on all frames
+        function optimizePaperSize() {
+            // Find the rightmost and bottommost points of all frames
+            let maxRight = 0;
+            let maxBottom = 0;
+
+            const frames = document.querySelectorAll('.frame');
+            frames.forEach(frame => {
+                const isFrameRotated = frame.style.transform.includes('rotate(90deg)');
+
+                const frameWidth = isFrameRotated ? frame.offsetHeight : frame.offsetWidth;
+                const frameHeight = isFrameRotated ? frame.offsetWidth : frame.offsetHeight;
+
+                const frameLeft = parseInt(frame.style.left || '0', 10);
+                const frameTop = parseInt(frame.style.top || '0', 10);
+
+                const frameRight = frameLeft + frameWidth;
+                const frameBottom = frameTop + frameHeight;
+
+                maxRight = Math.max(maxRight, frameRight);
+                maxBottom = Math.max(maxBottom, frameBottom);
+            });
+
+            // Add padding
+            maxRight += 20;
+            maxBottom += 20;
+
+            // Set minimum dimensions
+            const minWidth = 100;
+            const minHeight = 100;
+
+            const newWidth = Math.max(minWidth, maxRight);
+            const newHeight = Math.max(minHeight, maxBottom);
+
+            // Update paper size
+            paper.style.width = newWidth + "px";
+            paper.style.height = newHeight + "px";
+        }
+        function updatePaperSizeDisplay() {
+            const currentUnit = document.getElementById("paperUnit").value;
+            const factor = conversionFactors[currentUnit];
+
+            // Get current paper dimensions in pixels
+            const paperWidthPx = paper.clientWidth;
+            const paperHeightPx = paper.clientHeight;
+
+            // Convert to current unit
+            const displayedW = paperWidthPx / factor;
+            const displayedH = paperHeightPx / factor;
+
+            // Update your existing element
+            const paperSizeOutput = document.getElementById("paperSizeOutput");
+            paperSizeOutput.textContent = `Paper Size: ${displayedW.toFixed(2)} ${currentUnit} x ${displayedH.toFixed(2)} ${currentUnit}`;
         }
     }
+
 
     // Update alignment lines on window resize
     window.addEventListener('resize', function() {
