@@ -243,6 +243,22 @@
         .rotate-btn:hover {
             background-color: #e0e0e0;
         }
+        /* Add this to your CSS */
+        .highlighted-row {
+            background-color: #e6f7ff !important;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+            transition: background-color 0.3s ease;
+        }
+
+        /* Add a hover effect for better UX */
+        .frame {
+            cursor: pointer;
+        }
+
+        /* Make sure the table rows have a transition */
+        #frameTracker td {
+            transition: background-color 0.3s;
+        }
 
     </style>
 </head>
@@ -1458,7 +1474,12 @@
         element.addEventListener("mousedown", dragStart);
         document.addEventListener("mouseup", dragEnd);
         document.addEventListener("mousemove", drag);
-
+        element.addEventListener("click", function(e) {
+            // Prevent click from triggering during drag end
+            if (!element.classList.contains("dragging")) {
+                highlightFrameRow(element.id);
+            }
+        });
         function dragStart(e) {
             initialX = e.clientX - parseInt(element.style.left || '0', 10);
             initialY = e.clientY - parseInt(element.style.top || '0', 10);
@@ -1529,8 +1550,27 @@
 
             setTimeout(generateAlignmentLines, 100);
             updatePaperSizeDisplay();
+            highlightFrameRow(element.id);
         }
+        function highlightFrameRow(frameId) {
+            // Remove highlight from all rows
+            const allRows = document.querySelectorAll("#frameList tr");
+            allRows.forEach(row => {
+                row.classList.remove("highlighted-row");
+            });
 
+            // Add highlight to the corresponding row
+            const rowToHighlight = document.getElementById(frameId + "-row");
+            if (rowToHighlight) {
+                rowToHighlight.classList.add("highlighted-row");
+
+                // Scroll the row into view if needed
+                rowToHighlight.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+            }
+        }
         // Function to find optimal paper size based on all frames
         function optimizePaperSize() {
             // Find the rightmost and bottommost points of all frames
