@@ -3,6 +3,12 @@
 
 
 Paper Layout Organizer is a web application that lets users dynamically create, resize, rotate, and arrange custom rectangular frames on a virtual paper with adjustable margins and units, automatically optimizing the layout and displaying the resulting paper dimensions.
+
+## About
+- Automates the arrangement of images on paper with spacing algorithms with DOM manipulation
+- Interactive drag-and-drop functionality, SVG-based alignment and cutting guidelines, unit conversion, and CSS transformations for rotations
+
+
 ## Project Setup
 
 ```sh
@@ -20,6 +26,6 @@ npm run dev
 ```sh
 npm run build
 ```
-## FileMaker Pro Script
+## FMP Web Viewer Layout Script
 
 ![img.png](img.png)
