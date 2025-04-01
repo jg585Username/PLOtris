@@ -259,7 +259,11 @@
         #frameTracker td {
             transition: background-color 0.3s;
         }
-
+        .frame {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+        }
     </style>
 </head>
 <body>
@@ -1475,7 +1479,7 @@
         document.addEventListener("mouseup", dragEnd);
         document.addEventListener("mousemove", drag);
         element.addEventListener("click", function(e) {
-            // Prevent click from triggering during drag end
+            e.stopPropagation();
             if (!element.classList.contains("dragging")) {
                 highlightFrameRow(element.id);
             }
@@ -1553,22 +1557,13 @@
             highlightFrameRow(element.id);
         }
         function highlightFrameRow(frameId) {
-            // Remove highlight from all rows
-            const allRows = document.querySelectorAll("#frameList tr");
-            allRows.forEach(row => {
-                row.classList.remove("highlighted-row");
-            });
-
-            // Add highlight to the corresponding row
-            const rowToHighlight = document.getElementById(frameId + "-row");
+            var allRows = document.querySelectorAll("#frameList tr");
+            for (var i=0; i<allRows.length; i++){
+                allRows[i].className = allRows[i].className.replace("highlighted-row", "");
+            }
+            var rowToHighlight = document.getElementById(frameId + "-row");
             if (rowToHighlight) {
                 rowToHighlight.classList.add("highlighted-row");
-
-                // Scroll the row into view if needed
-                rowToHighlight.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
             }
         }
         // Function to find optimal paper size based on all frames
