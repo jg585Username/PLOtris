@@ -3,50 +3,56 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Paper Layout Organizer</title>
-    <!-- Removed Google Fonts or keep them if you like. IE11 will load them. -->
+    <title>Paper Layout Organizer - Legacy</title>
     <style>
-        /* Removed CSS variables, replaced with direct colors */
-        /* Original theme colors */
-        /* --primary-color: #007bff;  => #007bff */
-        /* --background-color: #f7f9fc => #f7f9fc */
-        /* --paper-background: #ffffff => #ffffff */
-        /* --frame-background: rgba(0, 123, 255, 0.1) => #E6F2FF (approx) */
-        /* --text-color: #333 => #333 */
-
+        /* -----------------------------------------------
+           MAIN THEME REPLACING CSS VARIABLES WITH RAW COLORS
+           ----------------------------------------------- */
         body {
-            font-family: Arial, Helvetica, sans-serif; /* Roboto might still work, but older IE can have issues */
-            background: #f7f9fc;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f7f9fc; /* was var(--background-color) */
             margin: 0;
             padding: 20px;
-            color: #333;
+            color: #333; /* was var(--text-color) */
         }
         h2 {
             margin: 0 0 10px;
         }
+
+        /* -----------------------------------------------
+           CONTROL PANEL
+           ----------------------------------------------- */
         #controls {
             background: #fff;
             padding: 20px;
             border-radius: 8px;
-            /* IE11 might need -webkit-box-shadow or -ms-box-shadow prefixes for shadows, but often works */
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
-            /* Removed gap, fallback to manual spacing */
+            /* Basic Flexbox, with fallback for IE11 */
             display: -ms-flexbox;
             display: flex;
             -ms-flex-wrap: wrap;
             flex-wrap: wrap;
             align-items: flex-start;
         }
-        /* We can’t rely on gap, so add margin-right manually or use sub-wrappers. */
         #controls > div {
+            /* CHANGED: Give each section some space. */
             margin-right: 40px;
             margin-bottom: 20px;
         }
-        label {
+
+        /* CHANGED: Add spacing between label/input pairs. */
+        #controls label {
+            display: inline-block;
             font-weight: bold;
-            margin-right: 5px;
+            margin-bottom: 5px;
         }
+        /* Let each control be on its own line for clarity. */
+        #controls div > div {
+            margin-bottom: 10px;
+        }
+
+        /* Add margins for inputs so they aren't too close together. */
         input[type="number"],
         input[type="text"],
         select {
@@ -54,6 +60,9 @@
             font-size: 14px;
             border: 1px solid #ccc;
             border-radius: 4px;
+            margin-right: 8px; /* CHANGED */
+            margin-top: 3px;   /* CHANGED */
+            margin-bottom: 3px;/* CHANGED */
             width: 100px;
         }
         input[type="text"] {
@@ -64,25 +73,30 @@
             font-size: 14px;
             border: none;
             border-radius: 4px;
-            background: #007bff;
+            background: #007bff; /* was var(--primary-color) */
             color: #fff;
             cursor: pointer;
-            /* IE11 supports basic transitions */
             transition: background 0.3s ease;
+            margin-top: 5px;
             display: inline-block;
-            margin-top: 10px;
         }
         button:hover {
             background: #0056b3;
         }
+
+        /* -----------------------------------------------
+           PAPER & FRAMES
+           ----------------------------------------------- */
         #paper {
             position: relative;
             margin: 0 auto 20px auto;
-            background: #ffffff;
+            background: #ffffff; /* was var(--paper-background) */
             border: 2px solid #ddd;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             overflow: hidden;
+            width: 800px; /* default inline style */
+            height: 600px;/* default inline style */
         }
         .frame {
             position: absolute;
@@ -92,12 +106,15 @@
             box-sizing: border-box;
             cursor: move;
             transition: box-shadow 0.2s ease;
-            /* transform-origin: center is mostly IE11-friendly */
             transform-origin: center;
         }
         .frame.dragging {
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
+
+        /* -----------------------------------------------
+           FRAME TRACKER SECTION
+           ----------------------------------------------- */
         #frameTracker {
             background: #fff;
             padding: 20px;
@@ -114,6 +131,7 @@
             padding: 8px 12px;
             text-align: left;
             border-bottom: 1px solid #ddd;
+            transition: background-color 0.3s;
         }
         #frameTracker th {
             background-color: #f0f0f0;
@@ -148,6 +166,10 @@
         #undoAction:hover {
             background: #5a6268;
         }
+
+        /* -----------------------------------------------
+           EXTRA STYLES
+           ----------------------------------------------- */
         .scale-info {
             font-size: 12px;
             color: #555;
@@ -155,6 +177,7 @@
         }
         .rotate-slider {
             width: 100px;
+            margin-left: 5px; /* CHANGED */
         }
         .rotate-value {
             font-size: 12px;
@@ -215,7 +238,6 @@
             background: #218838;
         }
         .line-controls {
-            /* Just put them inline-block or add spacing manually */
             margin-top: 10px;
         }
         .rotation-buttons {
@@ -236,13 +258,9 @@
         .highlighted-row {
             background-color: #e6f7ff !important;
             box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-            transition: background-color 0.3s ease;
         }
         .frame {
             cursor: pointer;
-        }
-        #frameTracker td {
-            transition: background-color 0.3s;
         }
     </style>
 </head>
@@ -273,6 +291,7 @@
         </div>
         <button id="setPaperSize">Apply</button>
     </div>
+
     <!-- Frame Settings -->
     <div>
         <h2>Frame Settings</h2>
@@ -301,6 +320,7 @@
         <button id="addFrame">Add Frame</button>
         <button id="undoAction">Undo Last Frame</button>
     </div>
+
     <!-- Organize Section -->
     <div>
         <h2>Organize</h2>
@@ -330,7 +350,7 @@
     </div>
 </div>
 
-<div id="paper" style="width:800px; height:600px;"></div>
+<div id="paper"></div>
 
 <div id="frameTracker">
     <h2>Frame Tracker</h2>
@@ -353,49 +373,54 @@
 </div>
 
 <script>
-    // Replaced let/const with var, arrow functions with function(), template strings with concatenation, etc.
-    // Also removed Set() usage, Array.from, for-of loops, includes, etc.
-
-    var showAlignmentLines = false;  // default
+    /* --------------------------------------------------
+       KEY GLOBALS & SIMPLE HELPER VARS
+       -------------------------------------------------- */
+    // CHANGED: set showAlignmentLines to true so alignment lines appear by default
+    var showAlignmentLines = true;
     var currentUnit = "inch";
 
     var conversionFactors = {
         px: 1,
-        cm: 10,  // Just as in your code
+        cm: 10,
         mm: 1,
         inch: 25
     };
 
+    /* --------------------------------------------------
+       SCALE INFO
+       -------------------------------------------------- */
     function updateScaleInfo() {
-        var paperScaleInfo = document.getElementById("paperScaleInfo");
-        var frameScaleInfo = document.getElementById("frameScaleInfo");
-        paperScaleInfo.textContent = "Scale: 1 " + currentUnit + " = " + conversionFactors[currentUnit] + " px";
-        frameScaleInfo.textContent = "Scale: 1 " + currentUnit + " = " + conversionFactors[currentUnit] + " px";
+        document.getElementById("paperScaleInfo").textContent =
+            "Scale: 1 " + currentUnit + " = " + conversionFactors[currentUnit] + " px";
+        document.getElementById("frameScaleInfo").textContent =
+            "Scale: 1 " + currentUnit + " = " + conversionFactors[currentUnit] + " px";
     }
     function updateMarginScaleInfo() {
-        var marginScaleInfo = document.getElementById("marginScaleInfo");
-        marginScaleInfo.textContent = "Scale: 1 " + currentUnit + " = " + conversionFactors[currentUnit] + " px";
+        document.getElementById("marginScaleInfo").textContent =
+            "Scale: 1 " + currentUnit + " = " + conversionFactors[currentUnit] + " px";
     }
     updateScaleInfo();
     updateMarginScaleInfo();
 
+    /* --------------------------------------------------
+       SYNC UNITS
+       -------------------------------------------------- */
     function syncUnits(newUnit) {
         if (newUnit === currentUnit) return;
         var oldUnit = currentUnit;
         currentUnit = newUnit;
         var ratio = conversionFactors[oldUnit] / conversionFactors[newUnit];
 
-        // Update paper dimensions
+        // Update paper dims
         var paperWidthInput = document.getElementById("paperWidth");
         var paperHeightInput = document.getElementById("paperHeight");
         var oldPaperWidth = parseFloat(paperWidthInput.value);
         var oldPaperHeight = parseFloat(paperHeightInput.value);
         var actualPaperWidthPx = oldPaperWidth * conversionFactors[oldUnit];
         var actualPaperHeightPx = oldPaperHeight * conversionFactors[oldUnit];
-        var newPaperWidthValue = actualPaperWidthPx / conversionFactors[newUnit];
-        var newPaperHeightValue = actualPaperHeightPx / conversionFactors[newUnit];
-        paperWidthInput.value = newPaperWidthValue;
-        paperHeightInput.value = newPaperHeightValue;
+        paperWidthInput.value = actualPaperWidthPx / conversionFactors[newUnit];
+        paperHeightInput.value = actualPaperHeightPx / conversionFactors[newUnit];
 
         var paper = document.getElementById("paper");
         paper.style.width = actualPaperWidthPx + "px";
@@ -403,16 +428,15 @@
 
         // Update frame tracker
         var rows = document.querySelectorAll("#frameList tr");
-        var i;
-        for (i = 0; i < rows.length; i++) {
+        for (var i = 0; i < rows.length; i++) {
             var row = rows[i];
             var unitCell = row.cells[3];
             unitCell.textContent = newUnit;
             var frameId = row.id.replace("-row", "");
             var frameElem = document.getElementById(frameId);
             if (frameElem) {
-                var origWidthPx = parseFloat(frameElem.dataset.origWidth);
-                var origHeightPx = parseFloat(frameElem.dataset.origHeight);
+                var origWidthPx = parseFloat(frameElem.getAttribute("data-orig-width"));
+                var origHeightPx = parseFloat(frameElem.getAttribute("data-orig-height"));
                 var newWidthDisplayed = origWidthPx / conversionFactors[newUnit];
                 var newHeightDisplayed = origHeightPx / conversionFactors[newUnit];
                 row.cells[1].textContent = newWidthDisplayed;
@@ -433,6 +457,7 @@
         updateAllFrameSizeDisplays();
     }
 
+    // EVENT: Changing units
     document.getElementById("paperUnit").addEventListener("change", function() {
         syncUnits(this.value);
     });
@@ -443,19 +468,20 @@
         syncUnits(this.value);
     });
 
+    /* --------------------------------------------------
+       PAPER & FRAME LOGIC
+       -------------------------------------------------- */
     var paper = document.getElementById("paper");
     var frameList = document.getElementById("frameList");
     var frameCount = 0;
     var frameHistory = [];
-
-    // IE11 doesn't have Number.MAX_SAFE_INTEGER, define your own big number:
+    // IE11 doesn't have Number.MAX_SAFE_INTEGER
     var MAX_SAFE = 9007199254740991;
 
     function addFrameDataAttributes(frame, widthPx, heightPx) {
         frame.setAttribute("data-orig-width", widthPx);
         frame.setAttribute("data-orig-height", heightPx);
     }
-
     function generateUniqueId(base) {
         var id = base;
         var counter = 1;
@@ -465,7 +491,6 @@
         }
         return id;
     }
-
     function updateFrameId(oldId, newId) {
         var frame = document.getElementById(oldId);
         if (frame) frame.id = newId;
@@ -491,20 +516,26 @@
         }
     }
 
+    /* --------------------------------------------------
+       PAPER DIMENSIONS BUTTON
+       -------------------------------------------------- */
     document.getElementById("setPaperSize").addEventListener("click", function() {
-        var paperWidthInput = document.getElementById("paperWidth").value;
-        var paperHeightInput = document.getElementById("paperHeight").value;
-        var actualWidthPx = paperWidthInput * conversionFactors[currentUnit];
-        var actualHeightPx = paperHeightInput * conversionFactors[currentUnit];
-        paper.style.width = actualWidthPx + "px";
-        paper.style.height = actualHeightPx + "px";
+        var w = parseFloat(document.getElementById("paperWidth").value) || 0;
+        var h = parseFloat(document.getElementById("paperHeight").value) || 0;
+        var factor = conversionFactors[currentUnit];
+        paper.style.width = (w * factor) + "px";
+        paper.style.height = (h * factor) + "px";
     });
 
+    /* --------------------------------------------------
+       ADD FRAME
+       -------------------------------------------------- */
     document.getElementById("addFrame").addEventListener("click", function() {
         var frameNameInput = document.getElementById("frameName").value.replace(/^\s+|\s+$/g, "");
-        var frameWidthInput = document.getElementById("frameWidth").value;
-        var frameHeightInput = document.getElementById("frameHeight").value;
+        var frameWidthInput = parseFloat(document.getElementById("frameWidth").value) || 0;
+        var frameHeightInput = parseFloat(document.getElementById("frameHeight").value) || 0;
         var factor = conversionFactors[currentUnit];
+
         frameCount++;
         var baseName = frameNameInput ? frameNameInput : ("frame-" + frameCount);
         var frameId = generateUniqueId(baseName);
@@ -512,6 +543,7 @@
         var widthPx = frameWidthInput * factor;
         var heightPx = frameHeightInput * factor;
 
+        // Create DOM element
         var frame = document.createElement("div");
         frame.className = "frame";
         frame.id = frameId;
@@ -525,9 +557,9 @@
         makeDraggable(frame);
         frameHistory.push(frameId);
 
+        // Create row in the table
         var row = document.createElement("tr");
         row.id = frameId + "-row";
-        // Replaced template strings with concatenation
         row.innerHTML =
             '<td class="frame-id-cell" contenteditable="true" data-frame-id="' + frameId + '">' + frameId + '</td>' +
             '<td class="dim-cell">' + frameWidthInput + '</td>' +
@@ -546,20 +578,20 @@
 
         frameList.appendChild(row);
 
-        // Rotation buttons
+        // ROTATION BUTTONS
         var rotationButtons = row.querySelectorAll(".rotate-btn");
-        var rb;
-        for (rb = 0; rb < rotationButtons.length; rb++) {
+        for (var rb = 0; rb < rotationButtons.length; rb++) {
             rotationButtons[rb].addEventListener("click", function() {
                 var angle = parseInt(this.getAttribute("data-angle"), 10);
                 var frmId = this.getAttribute("data-frame-id");
                 var frm = document.getElementById(frmId);
-                frm.style.transform = "rotate(" + angle + "deg)";
+                if (frm) {
+                    frm.style.transform = "rotate(" + angle + "deg)";
+                }
                 var slider = row.querySelector(".rotate-slider");
                 var rotateValue = row.querySelector(".rotate-value");
                 slider.value = angle;
                 rotateValue.textContent = angle + "°";
-
                 if (showAlignmentLines) {
                     setTimeout(function() {
                         generateAlignmentLines();
@@ -568,21 +600,23 @@
             });
         }
 
-        // Delete button
+        // DELETE BUTTON
         var deleteBtn = row.querySelector(".delete-btn");
-        deleteBtn.addEventListener("click", function () {
+        deleteBtn.addEventListener("click", function() {
             var currentFrameId = this.getAttribute("data-frame-id");
             deleteFrame(currentFrameId);
         });
 
-        // Rotate slider
+        // SLIDER (CHANGED: also listen for 'change' for older browsers)
         var rotateSlider = row.querySelector(".rotate-slider");
         var rotateValue = row.querySelector(".rotate-value");
-        rotateSlider.addEventListener("input", function(e) {
+        function onSliderMove(e) {
             var angle = e.target.value;
             frame.style.transform = "rotate(" + angle + "deg)";
             rotateValue.textContent = angle + "°";
-        });
+        }
+        rotateSlider.addEventListener("input", onSliderMove);
+        rotateSlider.addEventListener("change", onSliderMove);
 
         // ID cell editing
         var idCell = row.querySelector(".frame-id-cell");
@@ -640,20 +674,21 @@
         updateFrameSizeDisplay(frame);
     });
 
+    /* --------------------------------------------------
+       INPUT FIELD FILTERS
+       -------------------------------------------------- */
     function allowOnlyNumbers(e) {
-        if (e.ctrlKey || e.metaKey || e.altKey) { return; }
-        if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "Backspace" || e.key === "Delete") { return; }
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "Backspace" || e.key === "Delete") return;
         var currentValue = e.target.textContent || "";
         if (e.key === "-" || e.key === "–") {
             e.preventDefault();
             return;
         }
-        // Only digits and one dot
-        if (/[0-9]/.test(e.key)) { return; }
-        if (e.key === "." && currentValue.indexOf(".") === -1) { return; }
+        if (/[0-9]/.test(e.key)) return;
+        if (e.key === "." && currentValue.indexOf(".") === -1) return;
         e.preventDefault();
     }
-
     function filterPaste(e) {
         e.preventDefault();
         var text = (e.clipboardData || window.clipboardData).getData("text");
@@ -661,6 +696,9 @@
         document.execCommand("insertText", false, filtered);
     }
 
+    /* --------------------------------------------------
+       DELETE FRAME
+       -------------------------------------------------- */
     function deleteFrame(frameId) {
         var frame = document.getElementById(frameId);
         if (frame && frame.parentNode) {
@@ -670,19 +708,21 @@
         if (row && row.parentNode) {
             row.parentNode.removeChild(row);
         }
-        var newHistory = [];
-        var i;
-        for (i = 0; i < frameHistory.length; i++) {
+        var newHist = [];
+        for (var i = 0; i < frameHistory.length; i++) {
             if (frameHistory[i] !== frameId) {
-                newHistory.push(frameHistory[i]);
+                newHist.push(frameHistory[i]);
             }
         }
-        frameHistory = newHistory;
+        frameHistory = newHist;
         setTimeout(function() {
             generateAlignmentLines();
         }, 100);
     }
 
+    /* --------------------------------------------------
+       DELETE ALL FRAMES
+       -------------------------------------------------- */
     document.getElementById("deleteAllFrames").addEventListener("click", function() {
         while (paper.firstChild) {
             paper.removeChild(paper.firstChild);
@@ -693,6 +733,9 @@
         clearAlignmentLines();
     });
 
+    /* --------------------------------------------------
+       UNDO LAST
+       -------------------------------------------------- */
     document.getElementById("undoAction").addEventListener("click", function() {
         if (frameHistory.length > 0) {
             var lastFrameId = frameHistory.pop();
@@ -702,14 +745,22 @@
         }
     });
 
-    document.getElementById('organizeBtn').addEventListener('click', function() {
+    /* --------------------------------------------------
+       ORGANIZE BUTTON
+       -------------------------------------------------- */
+    document.getElementById("organizeBtn").addEventListener("click", function() {
         organizeFrames();
+        // CHANGED: If showAlignmentLines is true, we generate lines automatically
         if (showAlignmentLines) {
             generateAlignmentLines();
             generateCuttingGuidelines();
         }
     });
 
+    /* --------------------------------------------------
+       ORGANIZE FRAMES ALGORITHM
+       (same "maximal rectangles" from earlier)
+       -------------------------------------------------- */
     function organizeFrames() {
         var marginInputVal = parseFloat(document.getElementById("marginInput").value) || 0;
         var margin = marginInputVal * conversionFactors[currentUnit];
@@ -1037,17 +1088,20 @@
         var paperSizeOutput = document.getElementById("paperSizeOutput");
         paperSizeOutput.textContent = "Paper Size: " + displayedW.toFixed(2) + " " + currentUnit
             + " x " + displayedH.toFixed(2) + " " + currentUnit;
+
+        // update displays
         updateAllFrameSizeDisplays();
         setTimeout(function() {
             generateAlignmentLines();
         }, 100);
     }
 
-    // Basic init
+    /* --------------------------------------------------
+       NUMBERIC INPUT SAFEGUARDS
+       -------------------------------------------------- */
     document.addEventListener('DOMContentLoaded', function() {
         var numericInputs = document.querySelectorAll('input[type="number"]');
-        var i;
-        for (i = 0; i < numericInputs.length; i++) {
+        for (var i = 0; i < numericInputs.length; i++) {
             var inp = numericInputs[i];
             inp.setAttribute('min', '0');
             inp.addEventListener('input', function() {
@@ -1063,6 +1117,9 @@
         }
     });
 
+    /* --------------------------------------------------
+       FRAME SIZE LABELS
+       -------------------------------------------------- */
     var showFrameSizes = true;
     function updateFrameSizeDisplay(frame) {
         var widthPx = parseFloat(frame.style.width);
@@ -1080,6 +1137,7 @@
             sizeDisplay.textContent = widthInUnit + " × " + heightInUnit + " " + currentUnit;
             sizeDisplay.style.display = showFrameSizes ? 'block' : 'none';
 
+            // If 90deg rotation, offset
             var transform = frame.style.transform;
             if (transform.indexOf("rotate(90deg)") !== -1) {
                 sizeDisplay.style.transform = "rotate(-90deg)";
@@ -1095,8 +1153,7 @@
     }
     function updateAllFrameSizeDisplays() {
         var frames = document.querySelectorAll(".frame");
-        var i;
-        for (i = 0; i < frames.length; i++) {
+        for (var i = 0; i < frames.length; i++) {
             updateFrameSizeDisplay(frames[i]);
         }
     }
@@ -1104,27 +1161,27 @@
         showFrameSizes = !showFrameSizes;
         updateAllFrameSizeDisplays();
     }
+    document.getElementById("toggleFrameSizes").addEventListener("click", function() {
+        toggleFrameSizes();
+    });
 
+    /* --------------------------------------------------
+       ALIGNMENT LINES
+       -------------------------------------------------- */
     var alignmentLinesSvgId = "guidelinesSvg";
-
-    // Clear alignment lines
     function clearAlignmentLines() {
         var lines = document.querySelectorAll(".alignment-line");
-        var i;
-        for (i = 0; i < lines.length; i++) {
+        for (var i = 0; i < lines.length; i++) {
             if (lines[i].parentNode) {
                 lines[i].parentNode.removeChild(lines[i]);
             }
         }
-        // Also remove the <svg> if any
         var svg = document.getElementById(alignmentLinesSvgId);
         if (svg && svg.parentNode) {
             svg.parentNode.removeChild(svg);
         }
     }
-
     function createAlignmentLine(start, end, orientation) {
-        // IE doesn't support HTML <svg> line removal with .remove(), do manual
         var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
         line.setAttribute("x1", start.x);
         line.setAttribute("y1", start.y);
@@ -1150,94 +1207,79 @@
         }
         svg.appendChild(line);
     }
-
     function generateAlignmentLines() {
         if (!showAlignmentLines) {
             return;
         }
         clearAlignmentLines();
-
         var frames = document.querySelectorAll(".frame");
         if (frames.length < 2) {
             return;
         }
-        // Build array of rects
+        // Basic approach: lines at each frame edge
         var paperRect = paper.getBoundingClientRect();
         var frameRects = [];
-        var i;
-        for (i = 0; i < frames.length; i++) {
+        for (var i = 0; i < frames.length; i++) {
             var rect = frames[i].getBoundingClientRect();
             frameRects.push({
                 left: rect.left - paperRect.left,
                 right: rect.right - paperRect.left,
                 top: rect.top - paperRect.top,
-                bottom: rect.bottom - paperRect.top,
-                element: frames[i]
+                bottom: rect.bottom - paperRect.top
             });
         }
-        // We'll do a simple approach: draw lines at the edges of frames
-        // Identify unique x and y
-        var xPositionsArr = [];
-        var yPositionsArr = [];
+        // Collect unique X & Y
+        var xPositions = [];
+        var yPositions = [];
         for (i = 0; i < frameRects.length; i++) {
-            xPositionsArr.push(frameRects[i].left);
-            xPositionsArr.push(frameRects[i].right);
-            yPositionsArr.push(frameRects[i].top);
-            yPositionsArr.push(frameRects[i].bottom);
+            xPositions.push(frameRects[i].left, frameRects[i].right);
+            yPositions.push(frameRects[i].top, frameRects[i].bottom);
         }
-        // remove duplicates
-        xPositionsArr.sort(function(a, b){return a - b;});
-        yPositionsArr.sort(function(a, b){return a - b;});
+        xPositions.sort(function(a,b){return a-b;});
+        yPositions.sort(function(a,b){return a-b;});
 
-        // For each unique y, draw horizontal line if it doesn't intersect frames
-        var pWidth = parseInt(paper.style.width, 10) || paper.clientWidth;
-        var pHeight = parseInt(paper.style.height, 10) || paper.clientHeight;
+        var pWidth = parseInt(paper.style.width,10) || paper.clientWidth;
+        var pHeight = parseInt(paper.style.height,10) || paper.clientHeight;
 
-        function checkHorizontal(y) {
-            // If it runs inside any frame, skip
-            var j;
-            for (j = 0; j < frameRects.length; j++) {
-                if (y > frameRects[j].top && y < frameRects[j].bottom) {
+        // Horizontal lines
+        function canDrawHorizontal(y) {
+            for (var j=0; j<frameRects.length; j++){
+                if (y > frameRects[j].top && y < frameRects[j].bottom){
                     return false;
                 }
             }
             return true;
         }
-        var k;
-        for (k = 0; k < yPositionsArr.length; k++) {
-            var yVal = yPositionsArr[k];
-            if (checkHorizontal(yVal)) {
-                createAlignmentLine({ x: 0, y: yVal }, { x: pWidth, y: yVal }, "horizontal");
+        for (var hy=0; hy<yPositions.length; hy++){
+            var yVal = yPositions[hy];
+            if (canDrawHorizontal(yVal)){
+                createAlignmentLine({x:0, y:yVal}, {x:pWidth, y:yVal}, "horizontal");
             }
         }
 
-        function checkVertical(x) {
-            var j;
-            for (j = 0; j < frameRects.length; j++) {
-                if (x > frameRects[j].left && x < frameRects[j].right) {
+        // Vertical lines
+        function canDrawVertical(x) {
+            for (var j=0; j<frameRects.length; j++){
+                if (x > frameRects[j].left && x < frameRects[j].right){
                     return false;
                 }
             }
             return true;
         }
-        for (k = 0; k < xPositionsArr.length; k++) {
-            var xVal = xPositionsArr[k];
-            if (checkVertical(xVal)) {
-                createAlignmentLine({ x: xVal, y: 0 }, { x: xVal, y: pHeight }, "vertical");
+        for (var vx=0; vx<xPositions.length; vx++){
+            var xVal = xPositions[vx];
+            if (canDrawVertical(xVal)){
+                createAlignmentLine({x:xVal, y:0}, {x:xVal, y:pHeight}, "vertical");
             }
         }
     }
-
-    function generateCuttingGuidelines() {
-        // remove old
+    function generateCuttingGuidelines(){
         var oldCuts = document.querySelectorAll(".cutting-guide");
-        var i;
-        for (i = 0; i < oldCuts.length; i++) {
-            if (oldCuts[i].parentNode) {
+        for (var i=0; i<oldCuts.length; i++){
+            if (oldCuts[i].parentNode){
                 oldCuts[i].parentNode.removeChild(oldCuts[i]);
             }
         }
-        // get frames
         var frames = document.querySelectorAll(".frame");
         var paperRect = paper.getBoundingClientRect();
         var marginSize = parseFloat(document.getElementById("marginInput").value);
@@ -1292,14 +1334,17 @@
         svg.appendChild(line);
     }
 
+    /* --------------------------------------------------
+       MAKE DRAGGABLE
+       -------------------------------------------------- */
     function makeDraggable(element) {
         var initialX, initialY;
         element.addEventListener("mousedown", dragStart);
         document.addEventListener("mouseup", dragEnd);
         document.addEventListener("mousemove", drag);
 
-        element.addEventListener("click", function(e) {
-            if (!element.className.match(/dragging/)) {
+        element.addEventListener("click", function() {
+            if (element.className.indexOf("dragging") === -1) {
                 highlightFrameRow(element.id);
             }
         });
@@ -1307,7 +1352,9 @@
         function dragStart(e) {
             initialX = e.clientX - parseInt(element.style.left || "0", 10);
             initialY = e.clientY - parseInt(element.style.top || "0", 10);
-            element.className += " dragging";
+            if (element.className.indexOf("dragging") === -1) {
+                element.className += " dragging";
+            }
             element.style.zIndex = 1000;
             e.stopPropagation();
         }
@@ -1320,7 +1367,6 @@
 
                 element.style.left = newX + "px";
                 element.style.top = newY + "px";
-
                 var isRotated = (element.style.transform.indexOf("rotate(90deg)") !== -1);
                 var frameWidth = isRotated ? element.offsetHeight : element.offsetWidth;
                 var frameHeight = isRotated ? element.offsetWidth : element.offsetHeight;
@@ -1341,11 +1387,11 @@
             }
         }
         function dragEnd() {
-            element.className = element.className.replace("dragging", "");
+            element.className = element.className.replace(" dragging", "");
             element.style.zIndex = "";
             updateFrameSizeDisplay(element);
             optimizePaperSize();
-            setTimeout(function() {
+            setTimeout(function(){
                 generateAlignmentLines();
             }, 100);
             updatePaperSizeDisplay();
@@ -1353,66 +1399,61 @@
         }
         function highlightFrameRow(frameId) {
             var allRows = document.querySelectorAll("#frameList tr");
-            var i;
-            for (i = 0; i < allRows.length; i++) {
+            for (var i=0; i<allRows.length; i++){
                 allRows[i].className = allRows[i].className.replace("highlighted-row", "");
             }
             var rowToHighlight = document.getElementById(frameId + "-row");
             if (rowToHighlight) {
                 rowToHighlight.className += " highlighted-row";
-                // Basic scrollIntoView fallback (no smooth)
+                // Fallback scroll into view
                 rowToHighlight.scrollIntoView(false);
             }
         }
         function optimizePaperSize() {
             var frames = document.querySelectorAll(".frame");
-            var maxRight = 0;
-            var maxBottom = 0;
-            var i;
-            for (i = 0; i < frames.length; i++) {
+            var maxRight = 0, maxBottom = 0;
+            for (var i=0; i<frames.length; i++){
                 var fr = frames[i];
-                var rotated = fr.style.transform.indexOf("rotate(90deg)") !== -1;
+                var rotated = (fr.style.transform.indexOf("rotate(90deg)") !== -1);
                 var fw = rotated ? fr.offsetHeight : fr.offsetWidth;
                 var fh = rotated ? fr.offsetWidth : fr.offsetHeight;
-                var fl = parseInt(fr.style.left || "0", 10);
-                var ft = parseInt(fr.style.top || "0", 10);
-                var frt = fl + fw;
-                var frb = ft + fh;
-                if (frt > maxRight) { maxRight = frt; }
-                if (frb > maxBottom) { maxBottom = frb; }
+                var fl = parseInt(fr.style.left||"0",10);
+                var ft = parseInt(fr.style.top||"0",10);
+                maxRight = Math.max(maxRight, fl + fw);
+                maxBottom = Math.max(maxBottom, ft + fh);
             }
             maxRight += 2;
             maxBottom += 2;
-            var minWidth = 100;
-            var minHeight = 100;
-            var newW = (maxRight < minWidth) ? minWidth : maxRight;
-            var newH = (maxBottom < minHeight) ? minHeight : maxBottom;
+            var newW = Math.max(100, maxRight);
+            var newH = Math.max(100, maxBottom);
             paper.style.width = newW + "px";
             paper.style.height = newH + "px";
         }
         function updatePaperSizeDisplay() {
+            var factor = conversionFactors[currentUnit];
             var pW = paper.clientWidth;
             var pH = paper.clientHeight;
-            var factor = conversionFactors[currentUnit];
             var displayedW = pW / factor;
             var displayedH = pH / factor;
             var paperSizeOutput = document.getElementById("paperSizeOutput");
-            paperSizeOutput.textContent = "Paper Size: " + displayedW.toFixed(2) + " " + currentUnit
-                + " x " + displayedH.toFixed(2) + " " + currentUnit;
+            paperSizeOutput.textContent =
+                "Paper Size: " + displayedW.toFixed(2) + " " + currentUnit +
+                " x " + displayedH.toFixed(2) + " " + currentUnit;
         }
     }
 
+    /* --------------------------------------------------
+       INITIALIZE
+       -------------------------------------------------- */
     window.addEventListener("resize", function() {
         if (showAlignmentLines) {
             clearAlignmentLines();
-            setTimeout(function() {
+            setTimeout(function(){
                 generateAlignmentLines();
             }, 100);
         }
     });
-
-    // On initial load, do a delayed alignment call
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function(){
         setTimeout(function(){
             generateAlignmentLines();
         }, 500);
@@ -1441,5 +1482,6 @@
 </script>
 </body>
 </html>
+
 
 
