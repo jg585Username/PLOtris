@@ -9,17 +9,10 @@ Paper Layout Organizer is a web application that lets users dynamically create, 
 - Interactive drag-and-drop functionality, SVG-based alignment and cutting guidelines, unit conversion, and CSS transformations for rotations
 
 
-## Project Setup
+## Project Info
 
-```sh
-npm install
-```
+See "legacy" branch for downgraded version compatible with ES5/IE11 databases (Filemaker 16 or older)
 
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
 
 ### Compile and Minify for Production
 
