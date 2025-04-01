@@ -268,6 +268,11 @@
             -moz-user-select: none;
             -ms-user-select: none;
         }
+        .frame {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+        }
     </style>
 </head>
 <body>
@@ -1351,7 +1356,7 @@
 
         element.addEventListener("click", function(e) {
             e.stopPropagation();
-            if (element.className.indexOf("dragging") === -1) {
+            if (!element.classList.contains("dragging")) {
                 highlightFrameRow(element.id);
             }
         });
@@ -1413,11 +1418,6 @@
             var rowToHighlight = document.getElementById(frameId + "-row");
             if (rowToHighlight) {
                 rowToHighlight.classList.add("highlighted-row");
-                // Prevent scroll jump
-                const rect = rowToHighlight.getBoundingClientRect();
-                if (rect.top < 0 || rect.bottom > window.innerHeight) {
-                    rowToHighlight.scrollIntoView({behavior: "instant", block: "nearest"});
-                }
             }
         }
         function optimizePaperSize() {
