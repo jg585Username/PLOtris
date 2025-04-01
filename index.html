@@ -4,21 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Paper Layout Organizer</title>
-    <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet" />
+    <!-- Removed Google Fonts or keep them if you like. IE11 will load them. -->
     <style>
-        :root {
-            --primary-color: #007bff;
-            --background-color: #f7f9fc;
-            --paper-background: #ffffff;
-            --frame-background: rgba(0, 123, 255, 0.1);
-            --text-color: #333;
-        }
+        /* Removed CSS variables, replaced with direct colors */
+        /* Original theme colors */
+        /* --primary-color: #007bff;  => #007bff */
+        /* --background-color: #f7f9fc => #f7f9fc */
+        /* --paper-background: #ffffff => #ffffff */
+        /* --frame-background: rgba(0, 123, 255, 0.1) => #E6F2FF (approx) */
+        /* --text-color: #333 => #333 */
+
         body {
-            font-family: 'Roboto', sans-serif;
-            background: var(--background-color);
+            font-family: Arial, Helvetica, sans-serif; /* Roboto might still work, but older IE can have issues */
+            background: #f7f9fc;
             margin: 0;
             padding: 20px;
-            color: var(--text-color);
+            color: #333;
         }
         h2 {
             margin: 0 0 10px;
@@ -27,20 +28,23 @@
             background: #fff;
             padding: 20px;
             border-radius: 8px;
+            /* IE11 might need -webkit-box-shadow or -ms-box-shadow prefixes for shadows, but often works */
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
+            /* Removed gap, fallback to manual spacing */
+            display: -ms-flexbox;
             display: flex;
+            -ms-flex-wrap: wrap;
             flex-wrap: wrap;
-            gap: 40px;
             align-items: flex-start;
         }
+        /* We can’t rely on gap, so add margin-right manually or use sub-wrappers. */
         #controls > div {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            margin-right: 40px;
+            margin-bottom: 20px;
         }
         label {
-            font-weight: 500;
+            font-weight: bold;
             margin-right: 5px;
         }
         input[type="number"],
@@ -60,11 +64,13 @@
             font-size: 14px;
             border: none;
             border-radius: 4px;
-            background: var(--primary-color);
+            background: #007bff;
             color: #fff;
             cursor: pointer;
+            /* IE11 supports basic transitions */
             transition: background 0.3s ease;
-            align-self: flex-start;
+            display: inline-block;
+            margin-top: 10px;
         }
         button:hover {
             background: #0056b3;
@@ -72,28 +78,26 @@
         #paper {
             position: relative;
             margin: 0 auto 20px auto;
-            background: var(--paper-background);
+            background: #ffffff;
             border: 2px solid #ddd;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             overflow: hidden;
         }
-        /* Use center as transform origin for drag but note that for organize we assume top-left.
-           (You might adjust this as needed.) */
         .frame {
             position: absolute;
-            border: 2px solid var(--primary-color);
-            background: var(--frame-background);
+            border: 2px solid #007bff;
+            background: rgba(0, 123, 255, 0.1);
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             box-sizing: border-box;
             cursor: move;
             transition: box-shadow 0.2s ease;
+            /* transform-origin: center is mostly IE11-friendly */
             transform-origin: center;
         }
         .frame.dragging {
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
-        /* Frame Tracker styling */
         #frameTracker {
             background: #fff;
             padding: 20px;
@@ -166,8 +170,6 @@
             display: inline-block;
             background: #edf7f7;
         }
-
-        /* Styles for frame size display */
         .frame-size-display {
             position: absolute;
             top: 5px;
@@ -177,12 +179,10 @@
             border-radius: 3px;
             font-size: 12px;
             color: #333;
-            pointer-events: none; /* Make sure it doesn't interfere with dragging */
+            pointer-events: none;
             white-space: nowrap;
             z-index: 5;
         }
-
-        /* Toggle button for showing/hiding measurements */
         #toggleFrameSizes {
             margin-left: 10px;
             background: #6c757d;
@@ -194,23 +194,19 @@
             position: absolute;
             background-color: transparent;
             border: 1px dashed #666;
-            pointer-events: none; /* Make sure it doesn't interfere with interactions */
+            pointer-events: none;
             z-index: 2;
         }
-
         .alignment-line.horizontal {
             height: 0;
             border-top-style: dashed;
             border-bottom: none;
         }
-
         .alignment-line.vertical {
             width: 0;
             border-left-style: dashed;
             border-right: none;
         }
-
-        /* Toggle button for alignment lines */
         #toggleAlignmentLines {
             margin-left: 10px;
             background: #28a745;
@@ -218,19 +214,13 @@
         #toggleAlignmentLines:hover {
             background: #218838;
         }
-
         .line-controls {
-            display: flex;
-            gap: 10px;
+            /* Just put them inline-block or add spacing manually */
             margin-top: 10px;
         }
-
         .rotation-buttons {
-            display: flex;
-            gap: 5px;
             margin-top: 5px;
         }
-
         .rotate-btn {
             padding: 2px 5px;
             background-color: #ff5733;
@@ -238,28 +228,22 @@
             border-radius: 3px;
             cursor: pointer;
             font-size: 12px;
+            margin-right: 5px;
         }
-
         .rotate-btn:hover {
             background-color: #e0e0e0;
         }
-        /* Add this to your CSS */
         .highlighted-row {
             background-color: #e6f7ff !important;
             box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
             transition: background-color 0.3s ease;
         }
-
-        /* Add a hover effect for better UX */
         .frame {
             cursor: pointer;
         }
-
-        /* Make sure the table rows have a transition */
         #frameTracker td {
             transition: background-color 0.3s;
         }
-
     </style>
 </head>
 <body>
@@ -280,7 +264,7 @@
         <div>
             <label for="paperUnit">Unit:</label>
             <select id="paperUnit">
-                <option value="px" >px</option>
+                <option value="px">px</option>
                 <option value="cm">cm</option>
                 <option value="mm">mm</option>
                 <option value="inch" selected>inch</option>
@@ -307,7 +291,7 @@
         <div>
             <label for="frameUnit">Unit:</label>
             <select id="frameUnit">
-                <option value="px" >px</option>
+                <option value="px">px</option>
                 <option value="cm">cm</option>
                 <option value="mm">mm</option>
                 <option value="inch" selected>inch</option>
@@ -324,7 +308,7 @@
             <label for="marginInput">Margin:</label>
             <input type="number" id="marginInput" value="0.25" min="0"/>
             <select id="marginUnit">
-                <option value="px" >px</option>
+                <option value="px">px</option>
                 <option value="cm">cm</option>
                 <option value="mm">mm</option>
                 <option value="inch" selected>inch</option>
@@ -344,12 +328,10 @@
         </div>
         <div id="paperSizeOutput"></div>
     </div>
-
 </div>
 
 <div id="paper" style="width:800px; height:600px;"></div>
 
-<!-- Frame Tracker Section -->
 <div id="frameTracker">
     <h2>Frame Tracker</h2>
     <button id="deleteAllFrames">Delete All Frames</button>
@@ -371,70 +353,78 @@
 </div>
 
 <script>
-    let showAlignmentLines = false;
-    // Global current unit state; initially "inch"
-    let currentUnit = "inch";
+    // Replaced let/const with var, arrow functions with function(), template strings with concatenation, etc.
+    // Also removed Set() usage, Array.from, for-of loops, includes, etc.
 
-    const conversionFactors = {
+    var showAlignmentLines = false;  // default
+    var currentUnit = "inch";
+
+    var conversionFactors = {
         px: 1,
-        cm: 10,
+        cm: 10,  // Just as in your code
         mm: 1,
         inch: 25
     };
 
-    // Functions to update scale info displays.
     function updateScaleInfo() {
-        document.getElementById("paperScaleInfo").textContent = `Scale: 1 ${currentUnit} = ${conversionFactors[currentUnit]} px`;
-        document.getElementById("frameScaleInfo").textContent = `Scale: 1 ${currentUnit} = ${conversionFactors[currentUnit]} px`;
+        var paperScaleInfo = document.getElementById("paperScaleInfo");
+        var frameScaleInfo = document.getElementById("frameScaleInfo");
+        paperScaleInfo.textContent = "Scale: 1 " + currentUnit + " = " + conversionFactors[currentUnit] + " px";
+        frameScaleInfo.textContent = "Scale: 1 " + currentUnit + " = " + conversionFactors[currentUnit] + " px";
     }
     function updateMarginScaleInfo() {
-        document.getElementById("marginScaleInfo").textContent = `Scale: 1 ${currentUnit} = ${conversionFactors[currentUnit]} px`;
+        var marginScaleInfo = document.getElementById("marginScaleInfo");
+        marginScaleInfo.textContent = "Scale: 1 " + currentUnit + " = " + conversionFactors[currentUnit] + " px";
     }
     updateScaleInfo();
     updateMarginScaleInfo();
 
     function syncUnits(newUnit) {
         if (newUnit === currentUnit) return;
-        const oldUnit = currentUnit;
+        var oldUnit = currentUnit;
         currentUnit = newUnit;
-        // Conversion ratio from old unit to new unit.
-        const ratio = conversionFactors[oldUnit] / conversionFactors[newUnit];
+        var ratio = conversionFactors[oldUnit] / conversionFactors[newUnit];
 
-        // Update paper dimensions.
-        const paperWidthInput = document.getElementById("paperWidth");
-        const paperHeightInput = document.getElementById("paperHeight");
-        const oldPaperWidth = parseFloat(paperWidthInput.value);
-        const oldPaperHeight = parseFloat(paperHeightInput.value);
-        const actualPaperWidthPx = oldPaperWidth * conversionFactors[oldUnit];
-        const actualPaperHeightPx = oldPaperHeight * conversionFactors[oldUnit];
-        const newPaperWidthValue = actualPaperWidthPx / conversionFactors[newUnit];
-        const newPaperHeightValue = actualPaperHeightPx / conversionFactors[newUnit];
+        // Update paper dimensions
+        var paperWidthInput = document.getElementById("paperWidth");
+        var paperHeightInput = document.getElementById("paperHeight");
+        var oldPaperWidth = parseFloat(paperWidthInput.value);
+        var oldPaperHeight = parseFloat(paperHeightInput.value);
+        var actualPaperWidthPx = oldPaperWidth * conversionFactors[oldUnit];
+        var actualPaperHeightPx = oldPaperHeight * conversionFactors[oldUnit];
+        var newPaperWidthValue = actualPaperWidthPx / conversionFactors[newUnit];
+        var newPaperHeightValue = actualPaperHeightPx / conversionFactors[newUnit];
         paperWidthInput.value = newPaperWidthValue;
         paperHeightInput.value = newPaperHeightValue;
+
+        var paper = document.getElementById("paper");
         paper.style.width = actualPaperWidthPx + "px";
         paper.style.height = actualPaperHeightPx + "px";
 
-        // Update frame tracker dimensions.
-        const rows = document.querySelectorAll("#frameList tr");
-        rows.forEach(row => {
-            const unitCell = row.cells[3];
+        // Update frame tracker
+        var rows = document.querySelectorAll("#frameList tr");
+        var i;
+        for (i = 0; i < rows.length; i++) {
+            var row = rows[i];
+            var unitCell = row.cells[3];
             unitCell.textContent = newUnit;
-            const frameId = row.id.replace("-row", "");
-            const frameElem = document.getElementById(frameId);
+            var frameId = row.id.replace("-row", "");
+            var frameElem = document.getElementById(frameId);
             if (frameElem) {
-                const origWidthPx = parseFloat(frameElem.dataset.origWidth);
-                const origHeightPx = parseFloat(frameElem.dataset.origHeight);
-                const newWidthDisplayed = origWidthPx / conversionFactors[newUnit];
-                const newHeightDisplayed = origHeightPx / conversionFactors[newUnit];
+                var origWidthPx = parseFloat(frameElem.dataset.origWidth);
+                var origHeightPx = parseFloat(frameElem.dataset.origHeight);
+                var newWidthDisplayed = origWidthPx / conversionFactors[newUnit];
+                var newHeightDisplayed = origHeightPx / conversionFactors[newUnit];
                 row.cells[1].textContent = newWidthDisplayed;
                 row.cells[2].textContent = newHeightDisplayed;
             }
-        });
+        }
 
-        // Update margin input.
-        const marginInput = document.getElementById("marginInput");
-        const oldMargin = parseFloat(marginInput.value);
-        marginInput.value = oldMargin * ratio; // multiply by ratio to convert
+        // Update margin
+        var marginInput = document.getElementById("marginInput");
+        var oldMargin = parseFloat(marginInput.value);
+        marginInput.value = oldMargin * ratio;
+
         document.getElementById("paperUnit").value = newUnit;
         document.getElementById("frameUnit").value = newUnit;
         document.getElementById("marginUnit").value = newUnit;
@@ -453,19 +443,22 @@
         syncUnits(this.value);
     });
 
-    const paper = document.getElementById("paper");
-    const frameList = document.getElementById("frameList");
-    let frameCount = 0;
-    let frameHistory = [];
+    var paper = document.getElementById("paper");
+    var frameList = document.getElementById("frameList");
+    var frameCount = 0;
+    var frameHistory = [];
+
+    // IE11 doesn't have Number.MAX_SAFE_INTEGER, define your own big number:
+    var MAX_SAFE = 9007199254740991;
 
     function addFrameDataAttributes(frame, widthPx, heightPx) {
-        frame.dataset.origWidth = widthPx;
-        frame.dataset.origHeight = heightPx;
+        frame.setAttribute("data-orig-width", widthPx);
+        frame.setAttribute("data-orig-height", heightPx);
     }
 
     function generateUniqueId(base) {
-        let id = base;
-        let counter = 1;
+        var id = base;
+        var counter = 1;
         while (document.getElementById(id)) {
             id = base + "-" + counter;
             counter++;
@@ -474,53 +467,53 @@
     }
 
     function updateFrameId(oldId, newId) {
-        const frame = document.getElementById(oldId);
+        var frame = document.getElementById(oldId);
         if (frame) frame.id = newId;
-        const row = document.getElementById(oldId + "-row");
+        var row = document.getElementById(oldId + "-row");
         if (row) {
             row.id = newId + "-row";
-            const deleteBtn = row.querySelector(".delete-btn");
+            var deleteBtn = row.querySelector(".delete-btn");
             if (deleteBtn) {
                 deleteBtn.setAttribute("data-frame-id", newId);
             }
-            const slider = row.querySelector(".rotate-slider");
+            var slider = row.querySelector(".rotate-slider");
             if (slider) {
                 slider.setAttribute("data-frame-id", newId);
             }
-            const idCell = row.querySelector(".frame-id-cell");
+            var idCell = row.querySelector(".frame-id-cell");
             if (idCell) {
                 idCell.setAttribute("data-frame-id", newId);
             }
         }
-        const index = frameHistory.indexOf(oldId);
+        var index = frameHistory.indexOf(oldId);
         if (index !== -1) {
             frameHistory[index] = newId;
         }
     }
 
-    document.getElementById("setPaperSize").addEventListener("click", () => {
-        const paperWidthInput = document.getElementById("paperWidth").value;
-        const paperHeightInput = document.getElementById("paperHeight").value;
-        const actualWidthPx = paperWidthInput * conversionFactors[currentUnit];
-        const actualHeightPx = paperHeightInput * conversionFactors[currentUnit];
+    document.getElementById("setPaperSize").addEventListener("click", function() {
+        var paperWidthInput = document.getElementById("paperWidth").value;
+        var paperHeightInput = document.getElementById("paperHeight").value;
+        var actualWidthPx = paperWidthInput * conversionFactors[currentUnit];
+        var actualHeightPx = paperHeightInput * conversionFactors[currentUnit];
         paper.style.width = actualWidthPx + "px";
         paper.style.height = actualHeightPx + "px";
     });
 
-    document.getElementById("addFrame").addEventListener("click", () => {
-        const frameNameInput = document.getElementById("frameName").value.trim();
-        const frameWidthInput = document.getElementById("frameWidth").value;
-        const frameHeightInput = document.getElementById("frameHeight").value;
-        const factor = conversionFactors[currentUnit];
+    document.getElementById("addFrame").addEventListener("click", function() {
+        var frameNameInput = document.getElementById("frameName").value.replace(/^\s+|\s+$/g, "");
+        var frameWidthInput = document.getElementById("frameWidth").value;
+        var frameHeightInput = document.getElementById("frameHeight").value;
+        var factor = conversionFactors[currentUnit];
         frameCount++;
-        let baseName = frameNameInput ? frameNameInput : "frame-" + frameCount;
-        let frameId = generateUniqueId(baseName);
+        var baseName = frameNameInput ? frameNameInput : ("frame-" + frameCount);
+        var frameId = generateUniqueId(baseName);
 
-        const widthPx = frameWidthInput * factor;
-        const heightPx = frameHeightInput * factor;
+        var widthPx = frameWidthInput * factor;
+        var heightPx = frameHeightInput * factor;
 
-        const frame = document.createElement("div");
-        frame.classList.add("frame");
+        var frame = document.createElement("div");
+        frame.className = "frame";
         frame.id = frameId;
         frame.style.width = widthPx + "px";
         frame.style.height = heightPx + "px";
@@ -532,69 +525,72 @@
         makeDraggable(frame);
         frameHistory.push(frameId);
 
-        const row = document.createElement("tr");
+        var row = document.createElement("tr");
         row.id = frameId + "-row";
-        row.innerHTML = `
-      <td class="frame-id-cell" contenteditable="true" data-frame-id="${frameId}">${frameId}</td>
-      <td class="dim-cell">${frameWidthInput}</td>
-      <td class="dim-cell">${frameHeightInput}</td>
-      <td>${currentUnit}</td>
-      <td>
-        <input type="range" min="0" max="360" value="0" data-frame-id="${frameId}" class="rotate-slider">
-        <span class="rotate-value">0°</span>
-            <div class="rotation-buttons">
-      <button class="rotate-btn" data-angle="90" data-frame-id="${frameId}">90°</button>
-      <button class="rotate-btn" data-angle="180" data-frame-id="${frameId}">180°</button>
-      <button class="rotate-btn" data-angle="270" data-frame-id="${frameId}">270°</button>
-    </div>
-      </td>
-      <td><button class="delete-btn" data-frame-id="${frameId}">Delete</button></td>
-    `;
+        // Replaced template strings with concatenation
+        row.innerHTML =
+            '<td class="frame-id-cell" contenteditable="true" data-frame-id="' + frameId + '">' + frameId + '</td>' +
+            '<td class="dim-cell">' + frameWidthInput + '</td>' +
+            '<td class="dim-cell">' + frameHeightInput + '</td>' +
+            '<td>' + currentUnit + '</td>' +
+            '<td>' +
+            '  <input type="range" min="0" max="360" value="0" data-frame-id="' + frameId + '" class="rotate-slider">' +
+            '  <span class="rotate-value">0°</span>' +
+            '  <div class="rotation-buttons">' +
+            '    <button class="rotate-btn" data-angle="90" data-frame-id="' + frameId + '">90°</button>' +
+            '    <button class="rotate-btn" data-angle="180" data-frame-id="' + frameId + '">180°</button>' +
+            '    <button class="rotate-btn" data-angle="270" data-frame-id="' + frameId + '">270°</button>' +
+            '  </div>' +
+            '</td>' +
+            '<td><button class="delete-btn" data-frame-id="' + frameId + '">Delete</button></td>';
+
         frameList.appendChild(row);
-// Add this after creating the rotation buttons
-        const rotationButtons = row.querySelectorAll(".rotate-btn");
-        rotationButtons.forEach(btn => {
-            btn.addEventListener("click", function() {
-                const angle = parseInt(this.getAttribute("data-angle"));
-                const frameId = this.getAttribute("data-frame-id");
-                const frame = document.getElementById(frameId);
 
-                // Update the frame rotation
-                frame.style.transform = `rotate(${angle}deg)`;
-
-                // Update the slider and display value to match
-                const slider = row.querySelector(".rotate-slider");
-                const rotateValue = row.querySelector(".rotate-value");
+        // Rotation buttons
+        var rotationButtons = row.querySelectorAll(".rotate-btn");
+        var rb;
+        for (rb = 0; rb < rotationButtons.length; rb++) {
+            rotationButtons[rb].addEventListener("click", function() {
+                var angle = parseInt(this.getAttribute("data-angle"), 10);
+                var frmId = this.getAttribute("data-frame-id");
+                var frm = document.getElementById(frmId);
+                frm.style.transform = "rotate(" + angle + "deg)";
+                var slider = row.querySelector(".rotate-slider");
+                var rotateValue = row.querySelector(".rotate-value");
                 slider.value = angle;
-                rotateValue.textContent = `${angle}°`;
+                rotateValue.textContent = angle + "°";
 
-                // If you have alignment lines, update them
-                if (typeof showAlignmentLines !== 'undefined' && showAlignmentLines) {
-                    setTimeout(generateAlignmentLines, 100);
+                if (showAlignmentLines) {
+                    setTimeout(function() {
+                        generateAlignmentLines();
+                    }, 100);
                 }
             });
-        });
+        }
 
-        const deleteBtn = row.querySelector(".delete-btn");
+        // Delete button
+        var deleteBtn = row.querySelector(".delete-btn");
         deleteBtn.addEventListener("click", function () {
-            const currentFrameId = this.getAttribute("data-frame-id");
+            var currentFrameId = this.getAttribute("data-frame-id");
             deleteFrame(currentFrameId);
         });
 
-        const rotateSlider = row.querySelector(".rotate-slider");
-        const rotateValue = row.querySelector(".rotate-value");
-        rotateSlider.addEventListener("input", (e) => {
-            const angle = e.target.value;
-            frame.style.transform = `rotate(${angle}deg)`;
-            rotateValue.textContent = `${angle}°`;
+        // Rotate slider
+        var rotateSlider = row.querySelector(".rotate-slider");
+        var rotateValue = row.querySelector(".rotate-value");
+        rotateSlider.addEventListener("input", function(e) {
+            var angle = e.target.value;
+            frame.style.transform = "rotate(" + angle + "deg)";
+            rotateValue.textContent = angle + "°";
         });
 
-        const idCell = row.querySelector(".frame-id-cell");
-        idCell.addEventListener("blur", function () {
-            const oldId = this.getAttribute("data-frame-id");
-            const newIdCandidate = this.textContent.trim();
+        // ID cell editing
+        var idCell = row.querySelector(".frame-id-cell");
+        idCell.addEventListener("blur", function() {
+            var oldId = this.getAttribute("data-frame-id");
+            var newIdCandidate = this.textContent.replace(/^\s+|\s+$/g, "");
             if (newIdCandidate && newIdCandidate !== oldId) {
-                const uniqueId = generateUniqueId(newIdCandidate);
+                var uniqueId = generateUniqueId(newIdCandidate);
                 this.textContent = uniqueId;
                 updateFrameId(oldId, uniqueId);
             } else if (!newIdCandidate) {
@@ -602,22 +598,24 @@
             }
         });
 
-        const widthCell = row.cells[1];
-        const heightCell = row.cells[2];
+        // Width & height cells
+        var widthCell = row.cells[1];
+        var heightCell = row.cells[2];
         widthCell.contentEditable = "true";
         heightCell.contentEditable = "true";
         widthCell.addEventListener("keypress", allowOnlyNumbers);
         heightCell.addEventListener("keypress", allowOnlyNumbers);
         widthCell.addEventListener("paste", filterPaste);
         heightCell.addEventListener("paste", filterPaste);
+
         widthCell.addEventListener("blur", function() {
-            const newWidth = parseFloat(this.textContent);
+            var newWidth = parseFloat(this.textContent);
             if (!isNaN(newWidth)) {
-                const newWidthPx = newWidth * conversionFactors[currentUnit];
-                const frameElem = document.getElementById(row.id.replace("-row", ""));
+                var newWidthPx = newWidth * conversionFactors[currentUnit];
+                var frameElem = document.getElementById(row.id.replace("-row", ""));
                 if (frameElem) {
                     frameElem.style.width = newWidthPx + "px";
-                    frameElem.dataset.origWidth = newWidthPx;
+                    frameElem.setAttribute("data-orig-width", newWidthPx);
                     updateFrameSizeDisplay(frameElem);
                 }
             } else {
@@ -625,63 +623,79 @@
             }
         });
         heightCell.addEventListener("blur", function() {
-            const newHeight = parseFloat(this.textContent);
+            var newHeight = parseFloat(this.textContent);
             if (!isNaN(newHeight)) {
-                const newHeightPx = newHeight * conversionFactors[currentUnit];
-                const frameElem = document.getElementById(row.id.replace("-row", ""));
+                var newHeightPx = newHeight * conversionFactors[currentUnit];
+                var frameElem = document.getElementById(row.id.replace("-row", ""));
                 if (frameElem) {
                     frameElem.style.height = newHeightPx + "px";
-                    frameElem.dataset.origHeight = newHeightPx;
+                    frameElem.setAttribute("data-orig-height", newHeightPx);
                     updateFrameSizeDisplay(frameElem);
                 }
             } else {
                 this.textContent = frameHeightInput;
             }
         });
+
         updateFrameSizeDisplay(frame);
     });
 
     function allowOnlyNumbers(e) {
-        if (e.ctrlKey || e.metaKey || e.altKey) return;
-        if (["ArrowLeft", "ArrowRight", "Backspace", "Delete"].includes(e.key)) return;
-        const currentValue = e.target.textContent || "";
+        if (e.ctrlKey || e.metaKey || e.altKey) { return; }
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "Backspace" || e.key === "Delete") { return; }
+        var currentValue = e.target.textContent || "";
         if (e.key === "-" || e.key === "–") {
             e.preventDefault();
             return;
         }
-        if (/[0-9]/.test(e.key)) return;
-        if (e.key === "." && currentValue.indexOf(".") === -1) return;
+        // Only digits and one dot
+        if (/[0-9]/.test(e.key)) { return; }
+        if (e.key === "." && currentValue.indexOf(".") === -1) { return; }
         e.preventDefault();
     }
 
-    // Updated filterPaste function
     function filterPaste(e) {
         e.preventDefault();
-        const text = (e.clipboardData || window.clipboardData).getData("text");
-        const filtered = text.replace(/[^0-9.]/g, "");
+        var text = (e.clipboardData || window.clipboardData).getData("text");
+        var filtered = text.replace(/[^0-9.]/g, "");
         document.execCommand("insertText", false, filtered);
     }
 
     function deleteFrame(frameId) {
-        const frame = document.getElementById(frameId);
-        if (frame) paper.removeChild(frame);
-        const row = document.getElementById(frameId + "-row");
-        if (row) frameList.removeChild(row);
-        frameHistory = frameHistory.filter(id => id !== frameId);setTimeout(generateAlignmentLines, 100);
+        var frame = document.getElementById(frameId);
+        if (frame && frame.parentNode) {
+            frame.parentNode.removeChild(frame);
+        }
+        var row = document.getElementById(frameId + "-row");
+        if (row && row.parentNode) {
+            row.parentNode.removeChild(row);
+        }
+        var newHistory = [];
+        var i;
+        for (i = 0; i < frameHistory.length; i++) {
+            if (frameHistory[i] !== frameId) {
+                newHistory.push(frameHistory[i]);
+            }
+        }
+        frameHistory = newHistory;
+        setTimeout(function() {
+            generateAlignmentLines();
+        }, 100);
     }
 
-    document.getElementById("deleteAllFrames").addEventListener("click", () => {
+    document.getElementById("deleteAllFrames").addEventListener("click", function() {
         while (paper.firstChild) {
             paper.removeChild(paper.firstChild);
         }
         frameList.innerHTML = "";
         frameHistory = [];
-        frameCount = 0;clearAlignmentLines();
+        frameCount = 0;
+        clearAlignmentLines();
     });
 
-    document.getElementById("undoAction").addEventListener("click", () => {
+    document.getElementById("undoAction").addEventListener("click", function() {
         if (frameHistory.length > 0) {
-            const lastFrameId = frameHistory.pop();
+            var lastFrameId = frameHistory.pop();
             deleteFrame(lastFrameId);
         } else {
             alert("No actions to undo.");
@@ -695,98 +709,103 @@
             generateCuttingGuidelines();
         }
     });
-    function organizeFrames() {
-        const marginInputVal = parseFloat(document.getElementById("marginInput").value) || 0;
-        const margin = marginInputVal * conversionFactors[currentUnit];
-        const allowRotation = document.getElementById("allowRotation").checked;
 
-        // Gather frames data
-        const frameElements = Array.from(document.getElementsByClassName("frame"));
-        const frames = frameElements.map(frame => {
-            const origW = parseFloat(frame.dataset.origWidth);
-            const origH = parseFloat(frame.dataset.origHeight);
-            return {
-                element: frame,
+    function organizeFrames() {
+        var marginInputVal = parseFloat(document.getElementById("marginInput").value) || 0;
+        var margin = marginInputVal * conversionFactors[currentUnit];
+        var allowRotation = document.getElementById("allowRotation").checked;
+
+        // Gather frames
+        var frameElements = document.getElementsByClassName("frame");
+        var frames = [];
+        var i;
+        for (i = 0; i < frameElements.length; i++) {
+            var frm = frameElements[i];
+            var origW = parseFloat(frm.getAttribute("data-orig-width"));
+            var origH = parseFloat(frm.getAttribute("data-orig-height"));
+            frames.push({
+                element: frm,
                 origWidth: origW,
                 origHeight: origH,
                 rawWidth: origW,
                 rawHeight: origH
-            };
+            });
+        }
+
+        // Sort frames by area desc
+        frames.sort(function(a, b) {
+            return (b.origWidth * b.origHeight) - (a.origWidth * a.origHeight);
         });
 
-        // Sort frames by area in descending order for better packing
-        frames.sort((a, b) => (b.origWidth * b.origHeight) - (a.origWidth * a.origHeight));
-
-        // Maximal Rectangles packing algorithm
+        // We’ll replace Number.MAX_SAFE_INTEGER with MAX_SAFE
         function maximalRectanglesPacking(binWidth) {
-            // Deep copy frames array to work with
-            const layoutFrames = JSON.parse(JSON.stringify(frames));
+            var layoutFrames = [];
+            for (i = 0; i < frames.length; i++) {
+                // deep copy
+                layoutFrames.push({
+                    element: frames[i].element,
+                    origWidth: frames[i].origWidth,
+                    origHeight: frames[i].origHeight,
+                    rawWidth: frames[i].rawWidth,
+                    rawHeight: frames[i].rawHeight
+                });
+            }
 
-            // Initialize with a single maximal rectangle covering the entire bin
-            const freeRectangles = [{
+            // single free rectangle
+            var freeRectangles = [{
                 x: margin,
                 y: margin,
                 width: binWidth - 2*margin,
-                height: Number.MAX_SAFE_INTEGER
+                height: MAX_SAFE
             }];
 
-            let binHeight = margin; // Start with margin at the top
-            let maxRightEdge = margin; // Track the rightmost edge of all placed frames
+            var binHeight = margin;
+            var maxRightEdge = margin;
 
-            // Place each frame
-            layoutFrames.forEach(frame => {
-                // Find best position for this frame
-                const placement = findBestPlacement(frame, freeRectangles, allowRotation, margin);
-
+            // place each frame
+            var j;
+            for (j = 0; j < layoutFrames.length; j++) {
+                var frameObj = layoutFrames[j];
+                var placement = findBestPlacement(frameObj, freeRectangles, allowRotation, margin);
                 if (placement) {
-                    // Apply the placement (positions already include margin space)
-                    frame.posX = placement.x;
-                    frame.posY = placement.y;
-                    frame.usedWidth = placement.width;
-                    frame.usedHeight = placement.height;
-                    frame.rotated = placement.rotated;
+                    frameObj.posX = placement.x;
+                    frameObj.posY = placement.y;
+                    frameObj.usedWidth = placement.width;
+                    frameObj.usedHeight = placement.height;
+                    frameObj.rotated = placement.rotated;
 
-                    // Update bin height - add margin to placement height for boundary
                     binHeight = Math.max(binHeight, placement.y + placement.height + margin);
-
-                    // Update max right edge
                     maxRightEdge = Math.max(maxRightEdge, placement.x + placement.width + margin);
 
-                    // Update free rectangles - note that we include margin in the space taken
                     placeRectangle({
-                        x: placement.x - margin,  // Expand by margin for spacing
-                        y: placement.y - margin,  // Expand by margin for spacing
-                        width: placement.width + 2*margin,  // Add margins on both sides
-                        height: placement.height + 2*margin  // Add margins on both sides
+                        x: placement.x - margin,
+                        y: placement.y - margin,
+                        width: placement.width + 2*margin,
+                        height: placement.height + 2*margin
                     }, freeRectangles);
                 } else {
-                    // If we can't place it, put it at the bottom
-                    frame.posX = margin;
-                    frame.posY = binHeight;
-                    frame.usedWidth = frame.origWidth;
-                    frame.usedHeight = frame.origHeight;
-                    frame.rotated = false;
+                    // no placement found -> place at bottom
+                    frameObj.posX = margin;
+                    frameObj.posY = binHeight;
+                    frameObj.usedWidth = frameObj.origWidth;
+                    frameObj.usedHeight = frameObj.origHeight;
+                    frameObj.rotated = false;
 
-                    // Update max right edge
-                    maxRightEdge = Math.max(maxRightEdge, frame.posX + frame.origWidth + margin);
+                    maxRightEdge = Math.max(maxRightEdge, margin + frameObj.origWidth + margin);
+                    binHeight += frameObj.origHeight + margin;
 
-                    binHeight += frame.origHeight + margin;
-
-                    // Create new free rectangles on the sides of this one (include margin in used space)
-                    if (frame.origWidth + 2*margin < binWidth - 2*margin) {
+                    if (frameObj.origWidth + 2*margin < binWidth - 2*margin) {
                         freeRectangles.push({
-                            x: margin + frame.origWidth + margin, // Add margin spacing
-                            y: frame.posY - margin, // Back up for margin space
-                            width: binWidth - 2*margin - (frame.origWidth + margin),
-                            height: frame.origHeight + 2*margin
+                            x: margin + frameObj.origWidth + margin,
+                            y: frameObj.posY - margin,
+                            width: binWidth - 2*margin - (frameObj.origWidth + margin),
+                            height: frameObj.origHeight + 2*margin
                         });
                     }
                 }
-            });
+            }
 
-            // Calculate actual needed width (at least the margin + maxRightEdge)
-            const actualNeededWidth = Math.min(binWidth, maxRightEdge);
-
+            var actualNeededWidth = Math.min(binWidth, maxRightEdge);
             return {
                 usedWidth: actualNeededWidth,
                 usedHeight: binHeight,
@@ -794,195 +813,174 @@
             };
         }
 
-        // Function to find the best placement for a frame
-        function findBestPlacement(frame, freeRectangles, allowRotation, margin) {
-            let bestScore = -Infinity;
-            let bestRect = null;
-            let bestRotated = false;
+        function findBestPlacement(frameObj, freeRects, allowRotation, margin) {
+            var bestScore = -Infinity;
+            var bestRect = null;
+            var bestRotated = false;
+            var method = "best-short-side-fit";
 
-            // Heuristic methods for selecting placement
-            const bestFitMethod = "best-short-side-fit"; // Options: "best-area-fit", "best-short-side-fit", "best-long-side-fit"
-
-            // Try each free rectangle
-            for (const rect of freeRectangles) {
-                // Try normal orientation
-                if (frame.origWidth <= rect.width && frame.origHeight <= rect.height) {
-                    const score = scoreRectangle(rect.width, rect.height, frame.origWidth, frame.origHeight, bestFitMethod);
-                    if (score > bestScore) {
-                        bestScore = score;
+            var i;
+            for (i = 0; i < freeRects.length; i++) {
+                var rect = freeRects[i];
+                // normal orientation
+                if (frameObj.origWidth <= rect.width && frameObj.origHeight <= rect.height) {
+                    var sc = scoreRectangle(rect.width, rect.height, frameObj.origWidth, frameObj.origHeight, method);
+                    if (sc > bestScore) {
+                        bestScore = sc;
                         bestRect = rect;
                         bestRotated = false;
                     }
                 }
-
-                // Try rotated orientation if allowed
-                if (allowRotation && frame.origHeight <= rect.width && frame.origWidth <= rect.height) {
-                    const score = scoreRectangle(rect.width, rect.height, frame.origHeight, frame.origWidth, bestFitMethod);
-                    if (score > bestScore) {
-                        bestScore = score;
+                // rotated
+                if (allowRotation && frameObj.origHeight <= rect.width && frameObj.origWidth <= rect.height) {
+                    var sc2 = scoreRectangle(rect.width, rect.height, frameObj.origHeight, frameObj.origWidth, method);
+                    if (sc2 > bestScore) {
+                        bestScore = sc2;
                         bestRect = rect;
                         bestRotated = true;
                     }
                 }
             }
-
             if (bestRect) {
-                // Width and height that will actually be used
-                const width = bestRotated ? frame.origHeight : frame.origWidth;
-                const height = bestRotated ? frame.origWidth : frame.origHeight;
-
+                var w = bestRotated ? frameObj.origHeight : frameObj.origWidth;
+                var h = bestRotated ? frameObj.origWidth : frameObj.origHeight;
                 return {
                     x: bestRect.x,
                     y: bestRect.y,
-                    width: width,
-                    height: height,
+                    width: w,
+                    height: h,
                     rotated: bestRotated
                 };
             }
-
             return null;
         }
 
-        // Score a potential placement
-        function scoreRectangle(rectWidth, rectHeight, frameWidth, frameHeight, method) {
-            const areaFit = rectWidth * rectHeight - frameWidth * frameHeight;
-
-            switch (method) {
-                case "best-area-fit":
-                    return -areaFit; // Smaller leftover area is better
-                case "best-short-side-fit":
-                    return -Math.min(rectWidth - frameWidth, rectHeight - frameHeight);
-                case "best-long-side-fit":
-                    return -Math.max(rectWidth - frameWidth, rectHeight - frameHeight);
-                default:
-                    return -areaFit;
+        function scoreRectangle(rw, rh, fw, fh, method) {
+            var areaFit = rw * rh - fw * fh;
+            if (method === "best-area-fit") {
+                return -areaFit;
+            } else if (method === "best-short-side-fit") {
+                var leftoverW = rw - fw;
+                var leftoverH = rh - fh;
+                var shortSide = leftoverW < leftoverH ? leftoverW : leftoverH;
+                return -shortSide;
+            } else if (method === "best-long-side-fit") {
+                var leftoverW2 = rw - fw;
+                var leftoverH2 = rh - fh;
+                var longSide = leftoverW2 > leftoverH2 ? leftoverW2 : leftoverH2;
+                return -longSide;
             }
+            return -areaFit;
         }
 
-        // Update free rectangles after placing a rectangle
-        function placeRectangle(placement, freeRectangles) {
-            // Split free rectangles that overlap with the placement
-            const newFreeRectangles = [];
-
-            for (let i = 0; i < freeRectangles.length; i++) {
-                const free = freeRectangles[i];
-
-                // If no overlap, keep the rectangle as is
+        function placeRectangle(placement, freeRects) {
+            var newFree = [];
+            var i;
+            for (i = 0; i < freeRects.length; i++) {
+                var free = freeRects[i];
+                // no overlap
                 if (placement.x + placement.width <= free.x ||
                     placement.x >= free.x + free.width ||
                     placement.y + placement.height <= free.y ||
                     placement.y >= free.y + free.height) {
-                    newFreeRectangles.push(free);
+                    newFree.push(free);
                     continue;
                 }
+                // overlap -> split
 
-                // We have overlap - split the free rectangle into up to 4 new ones
-
-                // Left of placement
+                // left
                 if (placement.x > free.x) {
-                    newFreeRectangles.push({
+                    newFree.push({
                         x: free.x,
                         y: free.y,
                         width: placement.x - free.x,
                         height: free.height
                     });
                 }
-
-                // Right of placement
+                // right
                 if (free.x + free.width > placement.x + placement.width) {
-                    newFreeRectangles.push({
+                    newFree.push({
                         x: placement.x + placement.width,
                         y: free.y,
-                        width: free.x + free.width - (placement.x + placement.width),
+                        width: (free.x + free.width) - (placement.x + placement.width),
                         height: free.height
                     });
                 }
-
-                // Above placement
+                // above
                 if (placement.y > free.y) {
-                    newFreeRectangles.push({
+                    newFree.push({
                         x: free.x,
                         y: free.y,
                         width: free.width,
                         height: placement.y - free.y
                     });
                 }
-
-                // Below placement
+                // below
                 if (free.y + free.height > placement.y + placement.height) {
-                    newFreeRectangles.push({
+                    newFree.push({
                         x: free.x,
                         y: placement.y + placement.height,
                         width: free.width,
-                        height: free.y + free.height - (placement.y + placement.height)
+                        height: (free.y + free.height) - (placement.y + placement.height)
                     });
                 }
             }
+            freeRects.length = 0;
 
-            // Replace the old free rectangles with the new ones
-            freeRectangles.length = 0;
-
-            // Filter out contained rectangles
-            for (const rect of newFreeRectangles) {
-                if (!isRectangleContained(rect, newFreeRectangles)) {
-                    freeRectangles.push(rect);
+            // remove contained rectangles
+            var k;
+            for (k = 0; k < newFree.length; k++) {
+                var candidate = newFree[k];
+                var contained = false;
+                var m;
+                for (m = 0; m < newFree.length; m++) {
+                    if (m === k) { continue; }
+                    var other = newFree[m];
+                    if (candidate.x >= other.x &&
+                        candidate.y >= other.y &&
+                        candidate.x + candidate.width <= other.x + other.width &&
+                        candidate.y + candidate.height <= other.y + other.height) {
+                        contained = true;
+                        break;
+                    }
+                }
+                if (!contained) {
+                    freeRects.push(candidate);
                 }
             }
-
-            // Merge overlapping free rectangles to reduce their number
-            mergeFreeRectangles(freeRectangles);
+            mergeFreeRectangles(freeRects);
         }
 
-        // Check if a rectangle is contained within any other rectangle
-        function isRectangleContained(rect, rectangles) {
-            for (const other of rectangles) {
-                if (other !== rect &&
-                    rect.x >= other.x &&
-                    rect.y >= other.y &&
-                    rect.x + rect.width <= other.x + other.width &&
-                    rect.y + rect.height <= other.y + other.height) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        // Merge overlapping free rectangles to reduce fragmentation
-        function mergeFreeRectangles(freeRectangles) {
-            // Sort rectangles by area in descending order
-            freeRectangles.sort((a, b) => (b.width * b.height) - (a.width * a.height));
-
-            // This is a simplified merge that removes redundant rectangles
-            for (let i = 0; i < freeRectangles.length; i++) {
-                const rect = freeRectangles[i];
-                for (let j = i + 1; j < freeRectangles.length; j++) {
-                    const other = freeRectangles[j];
-
-                    // Check if other is fully contained in rect
+        function mergeFreeRectangles(freeRects) {
+            // Sort by area desc
+            freeRects.sort(function(a, b) {
+                return (b.width * b.height) - (a.width * a.height);
+            });
+            var i, j;
+            for (i = 0; i < freeRects.length; i++) {
+                var rect = freeRects[i];
+                for (j = i + 1; j < freeRects.length; j++) {
+                    var other = freeRects[j];
                     if (other.x >= rect.x &&
                         other.y >= rect.y &&
                         other.x + other.width <= rect.x + rect.width &&
                         other.y + other.height <= rect.y + rect.height) {
-                        freeRectangles.splice(j, 1);
+                        freeRects.splice(j, 1);
                         j--;
                     }
                 }
             }
         }
 
-        // Get paper dimensions in px
-        const paperWpx = parseFloat(document.getElementById("paperWidth").value) * conversionFactors[currentUnit];
-        const paperHpx = parseFloat(document.getElementById("paperHeight").value) * conversionFactors[currentUnit];
+        var paperWpx = parseFloat(document.getElementById("paperWidth").value) * conversionFactors[currentUnit];
+        var paperHpx = parseFloat(document.getElementById("paperHeight").value) * conversionFactors[currentUnit];
 
-        // Try both orientations
-        const normalResult = maximalRectanglesPacking(paperWpx);
-        const normalArea = normalResult.usedWidth * normalResult.usedHeight;
+        var normalResult = maximalRectanglesPacking(paperWpx);
+        var normalArea = normalResult.usedWidth * normalResult.usedHeight;
+        var swappedResult = maximalRectanglesPacking(paperHpx);
+        var swappedArea = swappedResult.usedWidth * swappedResult.usedHeight;
 
-        const swappedResult = maximalRectanglesPacking(paperHpx);
-        const swappedArea = swappedResult.usedWidth * swappedResult.usedHeight;
-
-        // Pick the better layout
-        let finalLayout, finalWpx, finalHpx;
+        var finalLayout, finalWpx, finalHpx;
         if (swappedArea < normalArea) {
             finalLayout = swappedResult.layoutFrames;
             finalWpx = swappedResult.usedWidth;
@@ -993,681 +991,455 @@
             finalHpx = normalResult.usedHeight;
         }
 
-        // Apply the best layout
-        finalLayout.forEach((f, i) => {
-            const element = frames[i].element;
-
+        var l;
+        for (l = 0; l < finalLayout.length; l++) {
+            var f = finalLayout[l];
+            var element = frames[l].element;
             if (f.rotated) {
-                // For rotated elements, we need to adjust the position and dimensions
-                // to compensate for how CSS transforms work
-
-                // When rotating 90 degrees, we need to:
-                // 1. Set width and height to the swapped dimensions
-                // 2. Use "transform-origin: top left" to rotate around top-left corner
-                // 3. Adjust positioning to account for the rotation
-
-                element.style.width = f.usedHeight + "px"; // Note: we swap width/height
+                // rotate 90
+                element.style.width = f.usedHeight + "px";
                 element.style.height = f.usedWidth + "px";
                 element.style.left = f.posX + "px";
                 element.style.top = f.posY + "px";
                 element.style.transformOrigin = "top left";
                 element.style.transform = "rotate(90deg) translate(0, -100%)";
 
-                // Update table row if it exists
-                const row = document.getElementById(element.id + "-row");
-                if (row) {
-                    row.cells[1].textContent = (f.usedHeight / conversionFactors[currentUnit]).toFixed(2);
-                    row.cells[2].textContent = (f.usedWidth / conversionFactors[currentUnit]).toFixed(2);
-                    row.cells[4].querySelector(".rotate-value").textContent = "90°";
-                    row.cells[4].querySelector(".rotate-slider").value = 90;
+                var rowId = element.id + "-row";
+                var rowEl = document.getElementById(rowId);
+                if (rowEl) {
+                    rowEl.cells[1].textContent = (f.usedHeight / conversionFactors[currentUnit]).toFixed(2);
+                    rowEl.cells[2].textContent = (f.usedWidth / conversionFactors[currentUnit]).toFixed(2);
+                    rowEl.cells[4].querySelector(".rotate-value").textContent = "90°";
+                    rowEl.cells[4].querySelector(".rotate-slider").value = 90;
                 }
             } else {
-                // For non-rotated elements, positioning is straightforward
                 element.style.width = f.usedWidth + "px";
                 element.style.height = f.usedHeight + "px";
                 element.style.left = f.posX + "px";
                 element.style.top = f.posY + "px";
                 element.style.transform = "rotate(0deg)";
-                element.style.transformOrigin = "center"; // reset to default
+                element.style.transformOrigin = "center";
 
-                // Update table row if it exists
-                const row = document.getElementById(element.id + "-row");
-                if (row) {
-                    row.cells[4].querySelector(".rotate-value").textContent = "0°";
-                    row.cells[4].querySelector(".rotate-slider").value = 0;
+                var rowId2 = element.id + "-row";
+                var rowEl2 = document.getElementById(rowId2);
+                if (rowEl2) {
+                    rowEl2.cells[4].querySelector(".rotate-value").textContent = "0°";
+                    rowEl2.cells[4].querySelector(".rotate-slider").value = 0;
                 }
             }
-        });
+        }
 
-        // Set final paper dimensions
         paper.style.width = finalWpx + "px";
         paper.style.height = finalHpx + "px";
 
-        // Display final size in current unit
-        const displayedW = finalWpx / conversionFactors[currentUnit];
-        const displayedH = finalHpx / conversionFactors[currentUnit];
-        const paperSizeOutput = document.getElementById("paperSizeOutput");
-        paperSizeOutput.textContent = `Paper Size: ${displayedW.toFixed(2)} ${currentUnit} x ${displayedH.toFixed(2)} ${currentUnit}`;
-        updateAllFrameSizeDisplays();setTimeout(generateAlignmentLines, 100);
+        var displayedW = finalWpx / conversionFactors[currentUnit];
+        var displayedH = finalHpx / conversionFactors[currentUnit];
+        var paperSizeOutput = document.getElementById("paperSizeOutput");
+        paperSizeOutput.textContent = "Paper Size: " + displayedW.toFixed(2) + " " + currentUnit
+            + " x " + displayedH.toFixed(2) + " " + currentUnit;
+        updateAllFrameSizeDisplays();
+        setTimeout(function() {
+            generateAlignmentLines();
+        }, 100);
     }
 
+    // Basic init
     document.addEventListener('DOMContentLoaded', function() {
-        // For all input[type="number"] elements
-        const numericInputs = document.querySelectorAll('input[type="number"]');
-        numericInputs.forEach(input => {
-            // Set min attribute to 0 to prevent negative values
-            input.setAttribute('min', '0');
-
-            // Add event handler for direct entry validation
-            input.addEventListener('input', function() {
+        var numericInputs = document.querySelectorAll('input[type="number"]');
+        var i;
+        for (i = 0; i < numericInputs.length; i++) {
+            var inp = numericInputs[i];
+            inp.setAttribute('min', '0');
+            inp.addEventListener('input', function() {
                 if (this.value < 0) {
                     this.value = 0;
                 }
             });
-
-            // Prevent minus key
-            input.addEventListener('keydown', function(e) {
+            inp.addEventListener('keydown', function(e) {
                 if (e.key === '-' || e.key === 'e') {
                     e.preventDefault();
                 }
             });
-        });
+        }
     });
 
-    // Global variable to track if size display is enabled
-    let showFrameSizes = true;
-
-    // Function to create or update the size display for a frame
+    var showFrameSizes = true;
     function updateFrameSizeDisplay(frame) {
-        // Get the frame's dimensions in the current unit
-        const widthPx = parseFloat(frame.style.width);
-        const heightPx = parseFloat(frame.style.height);
-        const widthInUnit = (widthPx / conversionFactors[currentUnit]).toFixed(2);
-        const heightInUnit = (heightPx / conversionFactors[currentUnit]).toFixed(2);
+        var widthPx = parseFloat(frame.style.width);
+        var heightPx = parseFloat(frame.style.height);
+        var widthInUnit = (widthPx / conversionFactors[currentUnit]).toFixed(2);
+        var heightInUnit = (heightPx / conversionFactors[currentUnit]).toFixed(2);
 
-        // Check if the frame already has a size display
-        let sizeDisplay = frame.querySelector('.frame-size-display');
-
-        // If no display exists and showing is enabled, create one
+        var sizeDisplay = frame.querySelector('.frame-size-display');
         if (!sizeDisplay && showFrameSizes) {
             sizeDisplay = document.createElement('div');
             sizeDisplay.className = 'frame-size-display';
             frame.appendChild(sizeDisplay);
         }
-
-        // If sizeDisplay exists, update its content
         if (sizeDisplay) {
-            sizeDisplay.textContent = `${widthInUnit} × ${heightInUnit} ${currentUnit}`;
+            sizeDisplay.textContent = widthInUnit + " × " + heightInUnit + " " + currentUnit;
             sizeDisplay.style.display = showFrameSizes ? 'block' : 'none';
 
-            // Adjust position if frame is rotated
-            let transform = frame.style.transform;
-            if (transform.includes('rotate(90deg)')) {
-                sizeDisplay.style.transform = 'rotate(-90deg)';
-                sizeDisplay.style.transformOrigin = 'left top';
-                sizeDisplay.style.top = '50%';
-                sizeDisplay.style.left = '10px';
+            var transform = frame.style.transform;
+            if (transform.indexOf("rotate(90deg)") !== -1) {
+                sizeDisplay.style.transform = "rotate(-90deg)";
+                sizeDisplay.style.transformOrigin = "left top";
+                sizeDisplay.style.top = "50%";
+                sizeDisplay.style.left = "10px";
             } else {
-                sizeDisplay.style.transform = '';
-                sizeDisplay.style.top = '5px';
-                sizeDisplay.style.left = '5px';
+                sizeDisplay.style.transform = "";
+                sizeDisplay.style.top = "5px";
+                sizeDisplay.style.left = "5px";
             }
         }
     }
-
-    // Function to update all frame size displays
     function updateAllFrameSizeDisplays() {
-        const frames = document.querySelectorAll('.frame');
-        frames.forEach(frame => updateFrameSizeDisplay(frame));
+        var frames = document.querySelectorAll(".frame");
+        var i;
+        for (i = 0; i < frames.length; i++) {
+            updateFrameSizeDisplay(frames[i]);
+        }
     }
-
-    // Toggle visibility of all frame size displays
     function toggleFrameSizes() {
         showFrameSizes = !showFrameSizes;
         updateAllFrameSizeDisplays();
     }
 
-    // Global variable to track if alignment lines are visible
-    showAlignmentLines = true;
+    var alignmentLinesSvgId = "guidelinesSvg";
 
-    // Function to clear all existing alignment lines
+    // Clear alignment lines
     function clearAlignmentLines() {
-        document.querySelectorAll('.alignment-line').forEach(line => line.remove());
+        var lines = document.querySelectorAll(".alignment-line");
+        var i;
+        for (i = 0; i < lines.length; i++) {
+            if (lines[i].parentNode) {
+                lines[i].parentNode.removeChild(lines[i]);
+            }
+        }
+        // Also remove the <svg> if any
+        var svg = document.getElementById(alignmentLinesSvgId);
+        if (svg && svg.parentNode) {
+            svg.parentNode.removeChild(svg);
+        }
     }
 
-    // Function to create an alignment line
     function createAlignmentLine(start, end, orientation) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', start.x);
-        line.setAttribute('y1', start.y);
-        line.setAttribute('x2', end.x);
-        line.setAttribute('y2', end.y);
-        line.setAttribute('stroke', '#666');
-        line.setAttribute('stroke-width', '1');
-        line.setAttribute('stroke-dasharray', '3,3');
-        line.classList.add('alignment-line');
+        // IE doesn't support HTML <svg> line removal with .remove(), do manual
+        var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", start.x);
+        line.setAttribute("y1", start.y);
+        line.setAttribute("x2", end.x);
+        line.setAttribute("y2", end.y);
+        line.setAttribute("stroke", "#666");
+        line.setAttribute("stroke-width", "1");
+        line.setAttribute("stroke-dasharray", "3,3");
+        line.setAttribute("class", "alignment-line");
 
-        let svg = document.getElementById('guidelinesSvg');
+        var svg = document.getElementById(alignmentLinesSvgId);
         if (!svg) {
-            svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.id = 'guidelinesSvg';
-            svg.style.position = 'absolute';
-            svg.style.top = '0';
-            svg.style.left = '0';
-            svg.style.width = '100%';
-            svg.style.height = '100%';
-            svg.style.pointerEvents = 'none';
-            svg.style.zIndex = '10';
+            svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.id = alignmentLinesSvgId;
+            svg.style.position = "absolute";
+            svg.style.top = "0";
+            svg.style.left = "0";
+            svg.style.width = "100%";
+            svg.style.height = "100%";
+            svg.style.pointerEvents = "none";
+            svg.style.zIndex = "10";
             paper.appendChild(svg);
         }
-
         svg.appendChild(line);
     }
 
-    // Main function to generate alignment lines
-    // Modified function to generate alignment lines
     function generateAlignmentLines() {
-        if (!showAlignmentLines) return;
-
-        // Clear existing lines
+        if (!showAlignmentLines) {
+            return;
+        }
         clearAlignmentLines();
 
-        const frames = Array.from(document.querySelectorAll('.frame'));
-        if (frames.length < 2) return; // Need at least 2 frames
-
-        // Extract frame positions and dimensions
-        const frameRects = frames.map(frame => {
-            const rect = frame.getBoundingClientRect();
-            const paperRect = paper.getBoundingClientRect();
-
-            // Convert to coordinates relative to the paper container
-            return {
+        var frames = document.querySelectorAll(".frame");
+        if (frames.length < 2) {
+            return;
+        }
+        // Build array of rects
+        var paperRect = paper.getBoundingClientRect();
+        var frameRects = [];
+        var i;
+        for (i = 0; i < frames.length; i++) {
+            var rect = frames[i].getBoundingClientRect();
+            frameRects.push({
                 left: rect.left - paperRect.left,
                 right: rect.right - paperRect.left,
                 top: rect.top - paperRect.top,
                 bottom: rect.bottom - paperRect.top,
-                width: rect.width,
-                height: rect.height,
-                element: frame
-            };
-        });
+                element: frames[i]
+            });
+        }
+        // We'll do a simple approach: draw lines at the edges of frames
+        // Identify unique x and y
+        var xPositionsArr = [];
+        var yPositionsArr = [];
+        for (i = 0; i < frameRects.length; i++) {
+            xPositionsArr.push(frameRects[i].left);
+            xPositionsArr.push(frameRects[i].right);
+            yPositionsArr.push(frameRects[i].top);
+            yPositionsArr.push(frameRects[i].bottom);
+        }
+        // remove duplicates
+        xPositionsArr.sort(function(a, b){return a - b;});
+        yPositionsArr.sort(function(a, b){return a - b;});
 
-        // Identify all unique horizontal and vertical positions
-        const xPositions = new Set();
-        const yPositions = new Set();
+        // For each unique y, draw horizontal line if it doesn't intersect frames
+        var pWidth = parseInt(paper.style.width, 10) || paper.clientWidth;
+        var pHeight = parseInt(paper.style.height, 10) || paper.clientHeight;
 
-        frameRects.forEach(rect => {
-            // Add positions with a small offset to create lines between frames
-            xPositions.add(rect.left);
-            xPositions.add(rect.right);
-            yPositions.add(rect.top);
-            yPositions.add(rect.bottom);
-        });
-
-        // Sort positions
-        const sortedX = Array.from(xPositions).sort((a, b) => a - b);
-        const sortedY = Array.from(yPositions).sort((a, b) => a - b);
-
-        // Generate horizontal lines between frames
-        for (let i = 0; i < sortedY.length; i++) {
-            const y = sortedY[i];
-
-            // Skip if this is a position that intersects a frame
-            let isValidLine = true;
-            for (const rect of frameRects) {
-                // Check if this y position intersects with a frame
-                if (y > rect.top && y < rect.bottom) {
-                    isValidLine = false;
-                    break;
+        function checkHorizontal(y) {
+            // If it runs inside any frame, skip
+            var j;
+            for (j = 0; j < frameRects.length; j++) {
+                if (y > frameRects[j].top && y < frameRects[j].bottom) {
+                    return false;
                 }
             }
-
-            if (isValidLine) {
-                // Create a horizontal line across the entire paper
-                createAlignmentLine(
-                    { x: 0, y: y },
-                    { x: parseInt(paper.style.width) || paper.clientWidth, y: y },
-                    'horizontal'
-                );
+            return true;
+        }
+        var k;
+        for (k = 0; k < yPositionsArr.length; k++) {
+            var yVal = yPositionsArr[k];
+            if (checkHorizontal(yVal)) {
+                createAlignmentLine({ x: 0, y: yVal }, { x: pWidth, y: yVal }, "horizontal");
             }
         }
 
-        // Generate vertical lines between frames
-        for (let i = 0; i < sortedX.length; i++) {
-            const x = sortedX[i];
-
-            // Skip if this is a position that intersects a frame
-            let isValidLine = true;
-            for (const rect of frameRects) {
-                // Check if this x position intersects with a frame
-                if (x > rect.left && x < rect.right) {
-                    isValidLine = false;
-                    break;
+        function checkVertical(x) {
+            var j;
+            for (j = 0; j < frameRects.length; j++) {
+                if (x > frameRects[j].left && x < frameRects[j].right) {
+                    return false;
                 }
             }
-
-            if (isValidLine) {
-                // Create a vertical line across the entire paper
-                createAlignmentLine(
-                    { x: x, y: 0 },
-                    { x: x, y: parseInt(paper.style.height) || paper.clientHeight },
-                    'vertical'
-                );
+            return true;
+        }
+        for (k = 0; k < xPositionsArr.length; k++) {
+            var xVal = xPositionsArr[k];
+            if (checkVertical(xVal)) {
+                createAlignmentLine({ x: xVal, y: 0 }, { x: xVal, y: pHeight }, "vertical");
             }
         }
     }
+
     function generateCuttingGuidelines() {
-        // Remove any existing cutting guidelines
-        document.querySelectorAll('.cutting-guide').forEach(line => line.remove());
+        // remove old
+        var oldCuts = document.querySelectorAll(".cutting-guide");
+        var i;
+        for (i = 0; i < oldCuts.length; i++) {
+            if (oldCuts[i].parentNode) {
+                oldCuts[i].parentNode.removeChild(oldCuts[i]);
+            }
+        }
+        // get frames
+        var frames = document.querySelectorAll(".frame");
+        var paperRect = paper.getBoundingClientRect();
+        var marginSize = parseFloat(document.getElementById("marginInput").value);
+        var halfMargin = marginSize / 2;
 
-        // Get all frames
-        const frames = Array.from(document.querySelectorAll('.frame'));
-        const paperRect = paper.getBoundingClientRect();
-        const marginSize = parseFloat(document.getElementById('marginInput').value);
-        const halfMargin = marginSize / 2;
-
-        const frameRects = frames.map(frame => {
-            const rect = frame.getBoundingClientRect();
-            return {
+        var frameRects = [];
+        for (i = 0; i < frames.length; i++) {
+            var rect = frames[i].getBoundingClientRect();
+            frameRects.push({
                 left: rect.left - paperRect.left,
                 right: rect.right - paperRect.left,
                 top: rect.top - paperRect.top,
-                bottom: rect.bottom - paperRect.top,
-                width: rect.width,
-                height: rect.height,
-                element: frame
-            };
-        });
-
-        // For each frame, create cutting lines at half margin distance
-        frameRects.forEach(rect => {
-            // Calculate the positions for the cutting lines (half margin away from frame)
-            createCuttingGuideline(
-                { x: rect.left - halfMargin, y: rect.top - halfMargin },
-                { x: rect.right + halfMargin, y: rect.top - halfMargin }
-            ); // Top
-
-            createCuttingGuideline(
-                { x: rect.right + halfMargin, y: rect.top - halfMargin },
-                { x: rect.right + halfMargin, y: rect.bottom + halfMargin }
-            ); // Right
-
-            createCuttingGuideline(
-                { x: rect.left - halfMargin, y: rect.bottom + halfMargin },
-                { x: rect.right + halfMargin, y: rect.bottom + halfMargin }
-            ); // Bottom
-
-            createCuttingGuideline(
-                { x: rect.left - halfMargin, y: rect.top - halfMargin },
-                { x: rect.left - halfMargin, y: rect.bottom + halfMargin }
-            ); // Left
-        });
+                bottom: rect.bottom - paperRect.top
+            });
+        }
+        for (i = 0; i < frameRects.length; i++) {
+            var r = frameRects[i];
+            createCutLine({ x: r.left - halfMargin, y: r.top - halfMargin },
+                { x: r.right + halfMargin, y: r.top - halfMargin });
+            createCutLine({ x: r.right + halfMargin, y: r.top - halfMargin },
+                { x: r.right + halfMargin, y: r.bottom + halfMargin });
+            createCutLine({ x: r.left - halfMargin, y: r.bottom + halfMargin },
+                { x: r.right + halfMargin, y: r.bottom + halfMargin });
+            createCutLine({ x: r.left - halfMargin, y: r.top - halfMargin },
+                { x: r.left - halfMargin, y: r.bottom + halfMargin });
+        }
     }
 
-
-
-    function createCuttingGuideline(start, end) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', start.x);
-        line.setAttribute('y1', start.y);
-        line.setAttribute('x2', end.x);
-        line.setAttribute('y2', end.y);
-        line.setAttribute('stroke', 'red');
-        line.setAttribute('stroke-width', '1');
-        line.setAttribute('stroke-dasharray', '3,3');
-        line.classList.add('cutting-guide');
-
-        let svg = document.getElementById('guidelinesSvg');
+    function createCutLine(start, end) {
+        var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", start.x);
+        line.setAttribute("y1", start.y);
+        line.setAttribute("x2", end.x);
+        line.setAttribute("y2", end.y);
+        line.setAttribute("stroke", "red");
+        line.setAttribute("stroke-width", "1");
+        line.setAttribute("stroke-dasharray", "3,3");
+        line.setAttribute("class", "cutting-guide");
+        var svg = document.getElementById(alignmentLinesSvgId);
         if (!svg) {
-            svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.id = 'guidelinesSvg';
-            svg.style.position = 'absolute';
-            svg.style.top = '0';
-            svg.style.left = '0';
-            svg.style.width = '100%';
-            svg.style.height = '100%';
-            svg.style.pointerEvents = 'none';
-            svg.style.zIndex = '10';
+            svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.id = alignmentLinesSvgId;
+            svg.style.position = "absolute";
+            svg.style.top = "0";
+            svg.style.left = "0";
+            svg.style.width = "100%";
+            svg.style.height = "100%";
+            svg.style.pointerEvents = "none";
+            svg.style.zIndex = "10";
             paper.appendChild(svg);
         }
-
         svg.appendChild(line);
     }
 
-    // Function to generate horizontal alignment lines
-    function generateHorizontalLines(frameRects) {
-        // Get all unique top and bottom positions
-        const horizontalEdges = [];
-        frameRects.forEach(rect => {
-            horizontalEdges.push({
-                position: rect.top,
-                isTop: true,
-                rect: rect
-            });
-            horizontalEdges.push({
-                position: rect.bottom,
-                isTop: false,
-                rect: rect
-            });
+    function makeDraggable(element) {
+        var initialX, initialY;
+        element.addEventListener("mousedown", dragStart);
+        document.addEventListener("mouseup", dragEnd);
+        document.addEventListener("mousemove", drag);
+
+        element.addEventListener("click", function(e) {
+            if (!element.className.match(/dragging/)) {
+                highlightFrameRow(element.id);
+            }
         });
 
-        // Sort by position
-        horizontalEdges.sort((a, b) => a.position - b.position);
-
-        // Find gaps between frames where we can draw lines
-        for (let i = 0; i < horizontalEdges.length - 1; i++) {
-            const currentEdge = horizontalEdges[i];
-            const nextEdge = horizontalEdges[i + 1];
-
-            // Skip if edges are too close
-            if (nextEdge.position - currentEdge.position < 10) continue;
-
-            // Calculate potential line position (middle of gap)
-            const lineY = (currentEdge.position + nextEdge.position) / 2;
-
-            // Make sure this line doesn't intersect any frame
-            if (isSpaceClear(frameRects, null, lineY, 'horizontal')) {
-                // Find frames to the left and right of this space to determine line length
-                const leftMostX = 0;
-                const rightMostX = parseInt(paper.style.width) || paper.clientWidth;
-
-                // Create the line
-                createAlignmentLine(
-                    { x: leftMostX, y: lineY },
-                    { x: rightMostX, y: lineY },
-                    'horizontal'
-                );
-            }
+        function dragStart(e) {
+            initialX = e.clientX - parseInt(element.style.left || "0", 10);
+            initialY = e.clientY - parseInt(element.style.top || "0", 10);
+            element.className += " dragging";
+            element.style.zIndex = 1000;
+            e.stopPropagation();
         }
-    }
+        function drag(e) {
+            if (element.className.indexOf("dragging") !== -1) {
+                var newX = e.clientX - initialX;
+                var newY = e.clientY - initialY;
+                if (newX < 0) newX = 0;
+                if (newY < 0) newY = 0;
 
-    // Function to generate vertical alignment lines
-    function generateVerticalLines(frameRects) {
-        // Get all unique left and right positions
-        const verticalEdges = [];
-        frameRects.forEach(rect => {
-            verticalEdges.push({
-                position: rect.left,
-                isLeft: true,
-                rect: rect
-            });
-            verticalEdges.push({
-                position: rect.right,
-                isLeft: false,
-                rect: rect
-            });
-        });
+                element.style.left = newX + "px";
+                element.style.top = newY + "px";
 
-        // Sort by position
-        verticalEdges.sort((a, b) => a.position - b.position);
+                var isRotated = (element.style.transform.indexOf("rotate(90deg)") !== -1);
+                var frameWidth = isRotated ? element.offsetHeight : element.offsetWidth;
+                var frameHeight = isRotated ? element.offsetWidth : element.offsetHeight;
 
-        // Find gaps between frames where we can draw lines
-        for (let i = 0; i < verticalEdges.length - 1; i++) {
-            const currentEdge = verticalEdges[i];
-            const nextEdge = verticalEdges[i + 1];
+                var rightEdge = newX + frameWidth;
+                var bottomEdge = newY + frameHeight;
+                var currentPaperWidth = paper.clientWidth;
+                var currentPaperHeight = paper.clientHeight;
 
-            // Skip if edges are too close
-            if (nextEdge.position - currentEdge.position < 10) continue;
-
-            // Calculate potential line position (middle of gap)
-            const lineX = (currentEdge.position + nextEdge.position) / 2;
-
-            // Make sure this line doesn't intersect any frame
-            if (isSpaceClear(frameRects, lineX, null, 'vertical')) {
-                // Find frames above and below this space to determine line length
-                const topMostY = 0;
-                const bottomMostY = parseInt(paper.style.height) || paper.clientHeight;
-
-                // Create the line
-                createAlignmentLine(
-                    { x: lineX, y: topMostY },
-                    { x: lineX, y: bottomMostY },
-                    'vertical'
-                );
-            }
-        }
-    }
-
-    // Check if a potential line position would intersect with any frames
-    function isSpaceClear(frameRects, x, y, type) {
-        for (const rect of frameRects) {
-            if (type === 'horizontal') {
-                // For horizontal lines, check if the line's y-position intersects with any frame
-                if (y > rect.top && y < rect.bottom) {
-                    return false;
+                if (rightEdge > currentPaperWidth || bottomEdge > currentPaperHeight) {
+                    var newWidth = Math.max(currentPaperWidth, rightEdge + 2);
+                    var newHeight = Math.max(currentPaperHeight, bottomEdge + 2);
+                    paper.style.width = newWidth + "px";
+                    paper.style.height = newHeight + "px";
                 }
-            } else if (type === 'vertical') {
-                // For vertical lines, check if the line's x-position intersects with any frame
-                if (x > rect.left && x < rect.right) {
-                    return false;
-                }
+                optimizePaperSize();
+                updatePaperSizeDisplay();
             }
         }
-        return true;
+        function dragEnd() {
+            element.className = element.className.replace("dragging", "");
+            element.style.zIndex = "";
+            updateFrameSizeDisplay(element);
+            optimizePaperSize();
+            setTimeout(function() {
+                generateAlignmentLines();
+            }, 100);
+            updatePaperSizeDisplay();
+            highlightFrameRow(element.id);
+        }
+        function highlightFrameRow(frameId) {
+            var allRows = document.querySelectorAll("#frameList tr");
+            var i;
+            for (i = 0; i < allRows.length; i++) {
+                allRows[i].className = allRows[i].className.replace("highlighted-row", "");
+            }
+            var rowToHighlight = document.getElementById(frameId + "-row");
+            if (rowToHighlight) {
+                rowToHighlight.className += " highlighted-row";
+                // Basic scrollIntoView fallback (no smooth)
+                rowToHighlight.scrollIntoView(false);
+            }
+        }
+        function optimizePaperSize() {
+            var frames = document.querySelectorAll(".frame");
+            var maxRight = 0;
+            var maxBottom = 0;
+            var i;
+            for (i = 0; i < frames.length; i++) {
+                var fr = frames[i];
+                var rotated = fr.style.transform.indexOf("rotate(90deg)") !== -1;
+                var fw = rotated ? fr.offsetHeight : fr.offsetWidth;
+                var fh = rotated ? fr.offsetWidth : fr.offsetHeight;
+                var fl = parseInt(fr.style.left || "0", 10);
+                var ft = parseInt(fr.style.top || "0", 10);
+                var frt = fl + fw;
+                var frb = ft + fh;
+                if (frt > maxRight) { maxRight = frt; }
+                if (frb > maxBottom) { maxBottom = frb; }
+            }
+            maxRight += 2;
+            maxBottom += 2;
+            var minWidth = 100;
+            var minHeight = 100;
+            var newW = (maxRight < minWidth) ? minWidth : maxRight;
+            var newH = (maxBottom < minHeight) ? minHeight : maxBottom;
+            paper.style.width = newW + "px";
+            paper.style.height = newH + "px";
+        }
+        function updatePaperSizeDisplay() {
+            var pW = paper.clientWidth;
+            var pH = paper.clientHeight;
+            var factor = conversionFactors[currentUnit];
+            var displayedW = pW / factor;
+            var displayedH = pH / factor;
+            var paperSizeOutput = document.getElementById("paperSizeOutput");
+            paperSizeOutput.textContent = "Paper Size: " + displayedW.toFixed(2) + " " + currentUnit
+                + " x " + displayedH.toFixed(2) + " " + currentUnit;
+        }
     }
 
-    // Toggle visibility of alignment lines
-    function toggleAlignmentLines() {
-        showAlignmentLines = !showAlignmentLines;
-
+    window.addEventListener("resize", function() {
         if (showAlignmentLines) {
-            generateAlignmentLines();
-        } else {
             clearAlignmentLines();
+            setTimeout(function() {
+                generateAlignmentLines();
+            }, 100);
         }
-    }
-    // Add event listener for the alignment lines toggle button
-    document.getElementById('toggleAlignmentLines').addEventListener('click', function() {
+    });
+
+    // On initial load, do a delayed alignment call
+    document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(function(){
+            generateAlignmentLines();
+        }, 500);
+    });
+
+    document.getElementById("toggleFrameSizes").addEventListener("click", function() {
+        toggleFrameSizes();
+    });
+
+    document.getElementById("toggleAlignmentLines").addEventListener("click", function() {
         showAlignmentLines = !showAlignmentLines;
         if (showAlignmentLines) {
             generateAlignmentLines();
             generateCuttingGuidelines();
         } else {
             clearAlignmentLines();
-            document.querySelectorAll('.cutting-guide').forEach(line => line.remove());
-        }
-    });
-
-
-    function makeDraggable(element) {
-        let initialX, initialY;
-        element.addEventListener("mousedown", dragStart);
-        document.addEventListener("mouseup", dragEnd);
-        document.addEventListener("mousemove", drag);
-        element.addEventListener("click", function(e) {
-            // Prevent click from triggering during drag end
-            if (!element.classList.contains("dragging")) {
-                highlightFrameRow(element.id);
-            }
-        });
-        function dragStart(e) {
-            initialX = e.clientX - parseInt(element.style.left || '0', 10);
-            initialY = e.clientY - parseInt(element.style.top || '0', 10);
-            element.classList.add("dragging");
-            element.style.zIndex = 1000;
-            e.stopPropagation(); // Prevent other handlers from firing
-        }
-
-        function drag(e) {
-            if (element.classList.contains("dragging")) {
-                let newX = e.clientX - initialX;
-                let newY = e.clientY - initialY;
-
-                // Instead of restricting to parent boundaries, allow movement and resize paper
-                const isRotated = element.style.transform.includes('rotate(90deg)');
-
-                // Get the correct dimensions based on rotation state
-                let frameWidth, frameHeight;
-                if (isRotated) {
-                    frameWidth = element.offsetHeight;
-                    frameHeight = element.offsetWidth;
-                } else {
-                    frameWidth = element.offsetWidth;
-                    frameHeight = element.offsetHeight;
+            var cuts = document.querySelectorAll(".cutting-guide");
+            var i;
+            for (i = 0; i < cuts.length; i++) {
+                if (cuts[i].parentNode) {
+                    cuts[i].parentNode.removeChild(cuts[i]);
                 }
-
-                // Only prevent negative positioning (below zero)
-                newX = Math.max(0, newX);
-                newY = Math.max(0, newY);
-
-                // Update frame position
-                element.style.left = newX + "px";
-                element.style.top = newY + "px";
-
-                // Resize paper if needed
-                const rightEdge = newX + frameWidth;
-                const bottomEdge = newY + frameHeight;
-
-                const currentPaperWidth = paper.clientWidth;
-                const currentPaperHeight = paper.clientHeight;
-
-                // Check if we need to resize the paper
-                if (rightEdge > currentPaperWidth || bottomEdge > currentPaperHeight) {
-                    // Resize paper to fit the frame with some padding
-                    const newWidth = Math.max(currentPaperWidth, rightEdge + 2);
-                    const newHeight = Math.max(currentPaperHeight, bottomEdge + 2);
-
-                    paper.style.width = newWidth + "px";
-                    paper.style.height = newHeight + "px";
-
-                    // If you have UI elements showing paper dimensions, update them here
-                    // updatePaperSizeDisplay(newWidth, newHeight);
-                }
-
-                // Optionally check if we can shrink the paper
-                optimizePaperSize();
-            }
-            updatePaperSizeDisplay();
-        }
-
-        function dragEnd() {
-            element.classList.remove("dragging");
-            element.style.zIndex = "";
-            updateFrameSizeDisplay(element);
-
-            // Final paper size optimization
-            optimizePaperSize();
-
-            setTimeout(generateAlignmentLines, 100);
-            updatePaperSizeDisplay();
-            highlightFrameRow(element.id);
-        }
-        function highlightFrameRow(frameId) {
-            // Remove highlight from all rows
-            const allRows = document.querySelectorAll("#frameList tr");
-            allRows.forEach(row => {
-                row.classList.remove("highlighted-row");
-            });
-
-            // Add highlight to the corresponding row
-            const rowToHighlight = document.getElementById(frameId + "-row");
-            if (rowToHighlight) {
-                rowToHighlight.classList.add("highlighted-row");
-
-                // Scroll the row into view if needed
-                rowToHighlight.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
             }
         }
-        // Function to find optimal paper size based on all frames
-        function optimizePaperSize() {
-            // Find the rightmost and bottommost points of all frames
-            let maxRight = 0;
-            let maxBottom = 0;
-
-            const frames = document.querySelectorAll('.frame');
-            frames.forEach(frame => {
-                const isFrameRotated = frame.style.transform.includes('rotate(90deg)');
-
-                const frameWidth = isFrameRotated ? frame.offsetHeight : frame.offsetWidth;
-                const frameHeight = isFrameRotated ? frame.offsetWidth : frame.offsetHeight;
-
-                const frameLeft = parseInt(frame.style.left || '0', 10);
-                const frameTop = parseInt(frame.style.top || '0', 10);
-
-                const frameRight = frameLeft + frameWidth;
-                const frameBottom = frameTop + frameHeight;
-
-                maxRight = Math.max(maxRight, frameRight);
-                maxBottom = Math.max(maxBottom, frameBottom);
-            });
-
-            // Add padding
-            maxRight += 2;
-            maxBottom += 2;
-
-            // Set minimum dimensions
-            const minWidth = 100;
-            const minHeight = 100;
-
-            const newWidth = Math.max(minWidth, maxRight);
-            const newHeight = Math.max(minHeight, maxBottom);
-
-            // Update paper size
-            paper.style.width = newWidth + "px";
-            paper.style.height = newHeight + "px";
-        }
-        function updatePaperSizeDisplay() {
-            const currentUnit = document.getElementById("paperUnit").value;
-            const factor = conversionFactors[currentUnit];
-
-            // Get current paper dimensions in pixels
-            const paperWidthPx = paper.clientWidth;
-            const paperHeightPx = paper.clientHeight;
-
-            // Convert to current unit
-            const displayedW = paperWidthPx / factor;
-            const displayedH = paperHeightPx / factor;
-
-            // Update your existing element
-            const paperSizeOutput = document.getElementById("paperSizeOutput");
-            paperSizeOutput.textContent = `Paper Size: ${displayedW.toFixed(2)} ${currentUnit} x ${displayedH.toFixed(2)} ${currentUnit}`;
-        }
-    }
-
-
-    // Update alignment lines on window resize
-    window.addEventListener('resize', function() {
-        if (showAlignmentLines) {
-            clearAlignmentLines();
-            setTimeout(generateAlignmentLines, 100);
-        }
     });
-    // Generate alignment lines on initial load if there are frames
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(generateAlignmentLines, 500); // Longer timeout for initial load
-    });
-
-    // Add event listener for the toggle button
-    document.getElementById('toggleFrameSizes').addEventListener('click', toggleFrameSizes);
-
-    // Add this after setting up the slider event listener
-    const rotationButtons = row.querySelectorAll(".rotate-btn");
-    rotationButtons.forEach(btn => {
-        btn.addEventListener("click", function() {
-            const angle = parseInt(this.getAttribute("data-angle"));
-            const frameId = this.getAttribute("data-frame-id");
-            const frame = document.getElementById(frameId);
-
-            // Update the frame rotation
-            frame.style.transform = `rotate(${angle}deg)`;
-
-            // Update the slider and display value to match
-            const slider = row.querySelector(".rotate-slider");
-            const rotateValue = row.querySelector(".rotate-value");
-            slider.value = angle;
-            rotateValue.textContent = `${angle}°`;
-
-            // If showing alignment lines, regenerate them
-            if (showAlignmentLines) {
-                setTimeout(generateAlignmentLines, 100);
-            }
-        });
-    });
-
 </script>
 </body>
 </html>
+
 
