@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Paper Layout Organizer - Legacy</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.2.0/classList.min.js"></script>
     <style>
         /* -----------------------------------------------
            MAIN THEME REPLACING CSS VARIABLES WITH RAW COLORS
@@ -361,6 +363,16 @@
         .minimize-btn:hover {
             background-color: #d4a700;
         }
+        .frame {
+            -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+        }
+
+        /* Legacy flexbox for draggable panels */
+        .draggable-panel {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+        }
     </style>
 </head>
 <body>
@@ -569,8 +581,8 @@
     let xOffset = 0;
     let yOffset = 0;
 
-    const panel = document.getElementById('frameTracker');
-    const header = panel.querySelector('.panel-header');
+    var panel = document.getElementById('frameTracker');
+    var header = panel.querySelector('.panel-header');
 
     header.addEventListener('mousedown', dragStart);
     document.addEventListener('mousemove', drag);
@@ -608,7 +620,7 @@
     }
 
     // Toggle visibility controls
-    panel.querySelector('.minimize-btn').addEventListener('click', () => {
+    panel.querySelector('.minimize-btn').addEventListener('click', function() {
         panel.classList.toggle('collapsed');
     });
 
