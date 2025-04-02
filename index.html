@@ -589,16 +589,12 @@
         panel.classList.toggle('collapsed');
     });
 
-    panel.querySelector('.close-btn').addEventListener('click', () => {
+    panel.querySelector('.close-btn').addEventListener('click', function() {
         panel.style.display = 'none';
-        // Add a button elsewhere to re-open it
     });
 
-    // Add ESC key to close
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && panel.style.display !== 'none') {
-            panel.style.display = 'none';
-        }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape'){}
     });
     /* --------------------------------------------------
        PAPER & FRAME LOGIC
