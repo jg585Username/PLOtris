@@ -273,6 +273,24 @@
             -webkit-user-select: none;
             -moz-user-select: none;
         }
+        .frame-id-display {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 2px 5px;
+            font-size: 12px;
+            border-radius: 3px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .frame-size-display {
+            /* Keep your existing size display styles */
+            top: 5px;
+            left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -563,6 +581,12 @@
         frame.style.left = "0px";
         frame.style.top = "0px";
         frame.style.transform = "rotate(0deg)";
+        
+        var idDisplay = document.createElement('div');
+        idDisplay.className = 'frame-id-display';
+        idDisplay.textContent = frameId;
+        frame.appendChild(idDisplay);
+
         paper.appendChild(frame);
         addFrameDataAttributes(frame, widthPx, heightPx);
         makeDraggable(frame);
@@ -1159,6 +1183,20 @@
                 sizeDisplay.style.transform = "";
                 sizeDisplay.style.top = "5px";
                 sizeDisplay.style.left = "5px";
+            }
+        }
+        var idDisplay = frame.querySelector('.frame-id-display');
+        if (idDisplay) {
+            idDisplay.textContent = frame.id;
+            if (transform.indexOf("rotate(90deg)") !== -1) {
+                idDisplay.style.transform = "rotate(-90deg)";
+                idDisplay.style.transformOrigin = "left bottom";
+                idDisplay.style.bottom = "50%";
+                idDisplay.style.left = "10px";
+            } else {
+                idDisplay.style.transform = "";
+                idDisplay.style.bottom = "5px";
+                idDisplay.style.left = "5px";
             }
         }
     }
