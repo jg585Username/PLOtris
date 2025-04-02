@@ -291,6 +291,53 @@
             top: 5px;
             left: 5px;
         }
+        .draggable-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 300px;
+            cursor: move;
+        }
+
+        .panel-header {
+            padding: 12px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .panel-controls button {
+            border: none;
+            background: none;
+            padding: 0 4px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .panel-content {
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        /* Collapsed state */
+        .draggable-panel.collapsed .panel-content {
+            display: none;
+        }
+
+        .draggable-panel.collapsed {
+            min-width: auto;
+            width: auto !important;
+        }
     </style>
 </head>
 <body>
@@ -381,24 +428,18 @@
 
 <div id="paper"></div>
 
-<div id="frameTracker">
-    <h2>Frame Tracker</h2>
-    <button id="deleteAllFrames">Delete All Frames</button>
-    <table>
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Width</th>
-            <th>Height</th>
-            <th>Unit</th>
-            <th>Rotation</th>
-            <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody id="frameList">
-        <!-- Frame rows will be added here -->
-        </tbody>
-    </table>
+<div id="frameTracker" class="draggable-panel">
+    <div class="panel-header">
+        <span>Frame Tracker</span>
+        <div class="panel-controls">
+            <button class="minimize-btn">−</button>
+            <button class="close-btn">×</button>
+        </div>
+    </div>
+    <div class="panel-content">
+        <button id="deleteAllFrames">Delete All Frames</button>
+        <table id="frameList">Drag this box around</table>
+    </div>
 </div>
 
 <script>
@@ -496,7 +537,69 @@
     document.getElementById("marginUnit").addEventListener("change", function() {
         syncUnits(this.value);
     });
+    // Make panel draggable
+    let isDragging = false;
+    let currentX = 0;
+    let currentY = 0;
+    let initialX = 0;
+    let initialY = 0;
+    let xOffset = 0;
+    let yOffset = 0;
 
+    const panel = document.getElementById('frameTracker');
+    const header = panel.querySelector('.panel-header');
+
+    header.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+
+    function dragStart(e) {
+        initialX = e.clientX - xOffset;
+        initialY = e.clientY - yOffset;
+
+        if (e.target === header || header.contains(e.target)) {
+            isDragging = true;
+        }
+    }
+
+    function drag(e) {
+        if (isDragging) {
+            e.preventDefault();
+            currentX = e.clientX - initialX;
+            currentY = e.clientY - initialY;
+            xOffset = currentX;
+            yOffset = currentY;
+            setTranslate(currentX, currentY, panel);
+        }
+    }
+
+    function setTranslate(xPos, yPos, el) {
+        el.style.left = xPos + 'px';
+        el.style.top = yPos + 'px';
+    }
+
+    function dragEnd() {
+        initialX = currentX;
+        initialY = currentY;
+        isDragging = false;
+    }
+
+    // Toggle visibility controls
+    panel.querySelector('.minimize-btn').addEventListener('click', () => {
+        panel.classList.toggle('collapsed');
+    });
+
+    panel.querySelector('.close-btn').addEventListener('click', () => {
+        panel.style.display = 'none';
+        // Add a button elsewhere to re-open it
+    });
+
+    // Add ESC key to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && panel.style.display !== 'none') {
+            panel.style.display = 'none';
+        }
+    });
     /* --------------------------------------------------
        PAPER & FRAME LOGIC
        -------------------------------------------------- */
