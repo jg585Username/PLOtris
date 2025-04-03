@@ -373,6 +373,18 @@
             display: -webkit-box;
             -webkit-box-orient: vertical;
         }
+        .draggable-panel {
+            /* Add initial visibility */
+            display: block;
+            /* Add transition for smooth show/hide */
+            transition: opacity 0.3s ease;
+        }
+
+        .draggable-panel.hidden {
+            display: none !important;
+            opacity: 0;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -462,7 +474,11 @@
 </div>
 
 <div id="paper"></div>
-
+<div style="position: fixed; top: 20px; left: 200px; z-index: 1000;">
+    <button id="frameTrackerToggle" style="padding: 8px 12px; background: #FFA500; border: 1px solid #ccc; cursor: pointer;">
+        Show/Hide Frame Tracker
+    </button>
+</div>
 <div id="frameTracker" class="draggable-panel">
     <div class="panel-header">
         <span>Frame Tracker</span>
@@ -561,7 +577,28 @@
         updateMarginScaleInfo();
         updateAllFrameSizeDisplays();
     }
+    var isPanelVisible = true;
+    var toggleButton = document.getElementById('frameTrackerToggle');
+    var panel = document.getElementById('frameTrackerPanel');
 
+    toggleButton.onclick = function() {
+        isPanelVisible = !isPanelVisible;
+
+        if(isPanelVisible) {
+            panel.style.display = 'block';
+            panel.style.opacity = '1';
+            toggleButton.innerHTML = 'Hide Frame Tracker';
+            // Force redraw for WebKit
+            panel.offsetHeight;
+        } else {
+            panel.style.opacity = '0';
+            // Delay display:none for transition
+            setTimeout(function(){
+                panel.style.display = 'none';
+            }, 300);
+            toggleButton.innerHTML = 'Show Frame Tracker';
+        }
+    };
     // EVENT: Changing units
     document.getElementById("paperUnit").addEventListener("change", function() {
         syncUnits(this.value);
