@@ -878,7 +878,6 @@
         });
 
         updateFrameSizeDisplay(frame);
-        saveState();
     });
 
     /* --------------------------------------------------
@@ -926,63 +925,7 @@
             generateAlignmentLines();
         }, 100);
     }
-    function getCurrentState() {
-        var frames = document.querySelectorAll('.frame');
-        var state = {
-            frames: [],
-            currentUnit: currentUnit,
-            frameCount: frameCount
-        };
 
-        frames.forEach(function(frame) {
-            state.frames.push({
-                id: frame.id,
-                x: frame.style.left,
-                y: frame.style.top,
-                width: frame.getAttribute('data-orig-width'),
-                height: frame.getAttribute('data-orig-height'),
-                name: document.getElementById(frame.id + '-name').value
-            });
-        });
-
-        return state;
-    }
-
-    function saveState() {
-        var state = getCurrentState();
-        // FileMaker-specific storage
-        window.location = "fmp://$/setScriptParameter?param=" +
-            encodeURIComponent(JSON.stringify(state));
-    }
-    function loadState() {
-        // Get state from FileMaker
-        var param = window.location.search.split('param=')[1];
-        if(param) {
-            var state = JSON.parse(decodeURIComponent(param));
-
-            // Clear existing frames
-            paper.innerHTML = '';
-            frameList.innerHTML = '';
-
-            // Restore frames
-            state.frames.forEach(function(frameData) {
-                createFrameFromState(frameData);
-            });
-
-            currentUnit = state.currentUnit;
-            frameCount = state.frameCount;
-        }
-    }
-
-    function createFrameFromState(frameData) {
-        // Recreate frame using existing creation logic
-        var frame = document.createElement('div');
-        frame.id = frameData.id;
-        frame.style.left = frameData.x;
-        frame.style.top = frameData.y;
-        addFrameDataAttributes(frame, frameData.width, frameData.height);
-        // Add to DOM and initialize drag/resize
-    }
     /* --------------------------------------------------
        DELETE ALL FRAMES
        -------------------------------------------------- */
@@ -1358,14 +1301,7 @@
             generateAlignmentLines();
         }, 100);
     }
-    document.addEventListener('DOMContentLoaded', function() {
-        loadState();
 
-        // Save triggers
-        document.addEventListener('mouseup', saveState);
-        document.addEventListener('keyup', saveState);
-        window.addEventListener('beforeunload', saveState);
-    });
     /* --------------------------------------------------
        NUMBERIC INPUT SAFEGUARDS
        -------------------------------------------------- */
