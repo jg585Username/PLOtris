@@ -871,6 +871,7 @@
             } else {
                 this.textContent = frameWidthInput;
             }
+            saveState();
         });
         heightCell.addEventListener("blur", function() {
             var newHeight = parseFloat(this.textContent);
@@ -888,6 +889,7 @@
         });
 
         updateFrameSizeDisplay(frame);
+        saveState();
     });
 
     /* --------------------------------------------------
@@ -934,6 +936,7 @@
         setTimeout(function() {
             generateAlignmentLines();
         }, 100);
+        saveState();
     }
 
     /* --------------------------------------------------
@@ -947,6 +950,7 @@
         frameHistory = [];
         frameCount = 0;
         clearAlignmentLines();
+        saveState();
     });
 
     /* --------------------------------------------------
@@ -959,6 +963,7 @@
         } else {
             alert("No actions to undo.");
         }
+        saveState();
     });
 
     /* --------------------------------------------------
@@ -1628,6 +1633,7 @@
             }, 100);
             updatePaperSizeDisplay();
             highlightFrameRow(element.id);
+            saveState();
         }
         function highlightFrameRow(frameId) {
             var allRows = document.querySelectorAll("#frameList tr");
