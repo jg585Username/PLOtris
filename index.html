@@ -1699,12 +1699,15 @@
             }
         }
     });
+    /* -----------------------------------------
+       1) SAFE LOCALSTORAGE FUNCTIONS
+       ----------------------------------------- */
     function safeSetLocalStorage(key, value) {
         try {
             localStorage.setItem(key, value);
         } catch (e) {
-            console.log("localStorage setItem failed: " + e.message);
-            // Optionally do any fallback or ignore
+            // If localStorage is blocked/unsupported, do nothing or log
+            // console.log("localStorage setItem failed: " + e.message);
         }
     }
 
@@ -1712,18 +1715,17 @@
         try {
             return localStorage.getItem(key);
         } catch (e) {
-            console.log("localStorage getItem failed: " + e.message);
+            // console.log("localStorage getItem failed: " + e.message);
             return null;
         }
     }
 
-    /* -------------------------------------------------
-       2) YOUR EXISTING SAVE/LOAD CODE, UPDATED
-       ------------------------------------------------- */
-
+    /* -----------------------------------------
+       2) SAVE STATE (ES5 Style)
+       ----------------------------------------- */
     function saveState() {
-        // 1) Create an object representing all data we want to persist
-        const data = {};
+        // Use "var" instead of "const"
+        var data = {};
 
         // Basic global flags/vars
         data.showAlignmentLines = showAlignmentLines;
@@ -1736,14 +1738,15 @@
 
         // Panel visibility, position
         data.isPanelVisible = isPanelVisible;
-        const panelEl = document.getElementById('frameTracker');
+        var panelEl = document.getElementById('frameTracker');
         data.panelLeft = panelEl.style.left;
         data.panelTop = panelEl.style.top;
 
-        // Now gather all frames
-        const allFrames = document.querySelectorAll(".frame");
+        // Gather frames (avoid arrow functions & NodeList.forEach)
+        var allFrames = document.querySelectorAll(".frame");
         data.frames = [];
-        allFrames.forEach(frame => {
+        for (var i = 0; i < allFrames.length; i++) {
+            var frame = allFrames[i];
             data.frames.push({
                 id: frame.id,
                 left: frame.style.left,
@@ -1754,26 +1757,27 @@
                 dataOrigWidth: frame.getAttribute("data-orig-width"),
                 dataOrigHeight: frame.getAttribute("data-orig-height")
             });
-        });
+        }
 
-        // Also store frameHistory for "Undo"
+        // Also store frameHistory (for "Undo" stack)
         data.frameHistory = frameHistory.slice();
 
-        // 2) Convert to JSON and save in localStorage (wrapped in the 'safe' function)
+        // Save in localStorage (via safe wrapper)
         safeSetLocalStorage("layoutData", JSON.stringify(data));
     }
 
+    /* -----------------------------------------
+       3) LOAD STATE (ES5 Style)
+       ----------------------------------------- */
     function loadState() {
-        // Instead of localStorage.getItem, use the safe version
-        const saved = safeGetLocalStorage("layoutData");
+        var saved = safeGetLocalStorage("layoutData");
         if (!saved) {
             return; // Nothing saved yet
         }
 
-        // 1) Parse data
-        const data = JSON.parse(saved);
+        var data = JSON.parse(saved);
 
-        // 2) Restore simple variables
+        // 1) Restore simple variables
         showAlignmentLines = data.showAlignmentLines;
         currentUnit = data.currentUnit || "inch";
 
@@ -1788,15 +1792,15 @@
         document.getElementById("marginUnit").value = currentUnit;
         syncUnits(currentUnit);
 
-        // Then set paper’s size in px according to those “paperWidth/Height”
-        const paperWpx = parseFloat(document.getElementById("paperWidth").value) * conversionFactors[currentUnit];
-        const paperHpx = parseFloat(document.getElementById("paperHeight").value) * conversionFactors[currentUnit];
+        // Adjust paper size in PX
+        var paperWpx = parseFloat(document.getElementById("paperWidth").value) * conversionFactors[currentUnit];
+        var paperHpx = parseFloat(document.getElementById("paperHeight").value) * conversionFactors[currentUnit];
         paper.style.width = paperWpx + "px";
         paper.style.height = paperHpx + "px";
 
-        // Restore panel visibility & position
+        // 2) Restore panel visibility & position
         isPanelVisible = (data.isPanelVisible !== false);
-        const panelEl = document.getElementById('frameTracker');
+        var panelEl = document.getElementById('frameTracker');
         panelEl.style.left = data.panelLeft || "0px";
         panelEl.style.top = data.panelTop || "0px";
         if (!isPanelVisible) {
@@ -1805,17 +1809,19 @@
             toggleButton.innerHTML = 'Show Frame Tracker';
         }
 
-        // 3) Rebuild frames
-        // Clear existing
+        // 3) Clear existing frames & table rows
         paper.innerHTML = "";
         frameList.innerHTML = "";
         frameHistory = [];
         frameCount = 0;
 
+        // Rebuild frames
         if (data.frames && data.frames.length > 0) {
-            data.frames.forEach(frameData => {
-                // Build frame
-                const frame = document.createElement("div");
+            for (var j = 0; j < data.frames.length; j++) {
+                var frameData = data.frames[j];
+
+                // Create the .frame div
+                var frame = document.createElement("div");
                 frame.className = "frame";
                 frame.id = frameData.id;
                 frame.style.left = frameData.left;
@@ -1826,27 +1832,29 @@
                 frame.setAttribute("data-orig-width", frameData.dataOrigWidth);
                 frame.setAttribute("data-orig-height", frameData.dataOrigHeight);
 
-                // ID display
-                const idDisplay = document.createElement('div');
+                // ID display inside the frame
+                var idDisplay = document.createElement('div');
                 idDisplay.className = 'frame-id-display';
                 idDisplay.textContent = frameData.id;
                 frame.appendChild(idDisplay);
 
-                // Insert into paper
+                // Insert into the paper
                 paper.appendChild(frame);
 
-                // Make draggable
+                // Make it draggable
                 makeDraggable(frame);
 
-                // Create row
-                const row = document.createElement("tr");
+                // Create row in the #frameList
+                var row = document.createElement("tr");
                 row.id = frameData.id + "-row";
 
-                const widthPx = parseFloat(frameData.width) || 0;
-                const heightPx = parseFloat(frameData.height) || 0;
-                const displayedW = (widthPx / conversionFactors[currentUnit]).toFixed(2);
-                const displayedH = (heightPx / conversionFactors[currentUnit]).toFixed(2);
+                // Convert stored px back to displayed dimension
+                var widthPx = parseFloat(frameData.width) || 0;
+                var heightPx = parseFloat(frameData.height) || 0;
+                var displayedW = (widthPx / conversionFactors[currentUnit]).toFixed(2);
+                var displayedH = (heightPx / conversionFactors[currentUnit]).toFixed(2);
 
+                // Build the row’s HTML (no template literals)
                 row.innerHTML =
                     '<td class="frame-id-cell" contenteditable="true" data-frame-id="' + frameData.id + '">' + frameData.id + '</td>' +
                     '<td class="dim-cell">' + displayedW + '</td>' +
@@ -1865,35 +1873,46 @@
 
                 frameList.appendChild(row);
 
-                // Attach the necessary listeners (delete, rotate, etc.)
-                const deleteBtn = row.querySelector(".delete-btn");
-                deleteBtn.addEventListener("click", function() {
-                    deleteFrame(frameData.id);
-                });
+                // Attach event listeners for "Delete," "Rotate," etc.
+                var deleteBtn = row.querySelector(".delete-btn");
+                deleteBtn.addEventListener("click", (function(id) {
+                    // Use an IIFE to capture the ID in older IE
+                    return function() {
+                        deleteFrame(id);
+                    };
+                })(frameData.id));
 
-                // Finally, update the display
+                // Finally, update the size display
                 updateFrameSizeDisplay(frame);
-            });
+            }
         }
 
-        // Also restore frameHistory if needed
+        // 4) Restore frameHistory if needed
         frameHistory = data.frameHistory || [];
 
-        // Regenerate alignment lines if applicable
+        // 5) Regenerate alignment lines if needed
         if (showAlignmentLines) {
             generateAlignmentLines();
         }
     }
+
+    /* -----------------------------------------
+       4) LOAD ON DOM READY & SAVE ON UNLOAD
+       ----------------------------------------- */
+
+    // For IE9+ we can do addEventListener("DOMContentLoaded", ...)
     document.addEventListener("DOMContentLoaded", function() {
-        loadState(); // Attempt to restore from localStorage
+        loadState();
         // If you want lines re-drawn after a short delay:
-        setTimeout(function() { generateAlignmentLines(); }, 500);
+        setTimeout(function() {
+            if (showAlignmentLines) {
+                generateAlignmentLines();
+            }
+        }, 500);
     });
 
-    // Call saveState on page unload:
     window.addEventListener("beforeunload", function() {
         saveState();
-        // Some browsers ignore any custom prompts unless it’s user-initiated
     });
 </script>
 </body>
