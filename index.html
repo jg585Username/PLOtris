@@ -1699,6 +1699,27 @@
             }
         }
     });
+    function safeSetLocalStorage(key, value) {
+        try {
+            localStorage.setItem(key, value);
+        } catch (e) {
+            console.log("localStorage setItem failed: " + e.message);
+            // Optionally do any fallback or ignore
+        }
+    }
+
+    function safeGetLocalStorage(key) {
+        try {
+            return localStorage.getItem(key);
+        } catch (e) {
+            console.log("localStorage getItem failed: " + e.message);
+            return null;
+        }
+    }
+
+    /* -------------------------------------------------
+       2) YOUR EXISTING SAVE/LOAD CODE, UPDATED
+       ------------------------------------------------- */
 
     function saveState() {
         // 1) Create an object representing all data we want to persist
@@ -1715,7 +1736,6 @@
 
         // Panel visibility, position
         data.isPanelVisible = isPanelVisible;
-        // The panel might have been dragged
         const panelEl = document.getElementById('frameTracker');
         data.panelLeft = panelEl.style.left;
         data.panelTop = panelEl.style.top;
@@ -1736,21 +1756,20 @@
             });
         });
 
-        // We should store the row info, too—like the table entries
-        // (IDs, displayed dims, rotation, etc.). Alternatively,
-        // you can rebuild that from the frames array, but let's store
-        // the minimal needed info. For example:
-        data.frameHistory = frameHistory.slice(); // copy
+        // Also store frameHistory for "Undo"
+        data.frameHistory = frameHistory.slice();
 
-        // 2) Convert to JSON and save in localStorage
-        localStorage.setItem("layoutData", JSON.stringify(data));
+        // 2) Convert to JSON and save in localStorage (wrapped in the 'safe' function)
+        safeSetLocalStorage("layoutData", JSON.stringify(data));
     }
 
     function loadState() {
-        const saved = localStorage.getItem("layoutData");
+        // Instead of localStorage.getItem, use the safe version
+        const saved = safeGetLocalStorage("layoutData");
         if (!saved) {
             return; // Nothing saved yet
         }
+
         // 1) Parse data
         const data = JSON.parse(saved);
 
@@ -1767,10 +1786,9 @@
         document.getElementById("paperUnit").value = currentUnit;
         document.getElementById("frameUnit").value = currentUnit;
         document.getElementById("marginUnit").value = currentUnit;
-        // Force an update so your page uses those new values
         syncUnits(currentUnit);
 
-        // Then set paper’s size in px according to those “paperWidth/Height” * conversion factor:
+        // Then set paper’s size in px according to those “paperWidth/Height”
         const paperWpx = parseFloat(document.getElementById("paperWidth").value) * conversionFactors[currentUnit];
         const paperHpx = parseFloat(document.getElementById("paperHeight").value) * conversionFactors[currentUnit];
         paper.style.width = paperWpx + "px";
@@ -1788,7 +1806,7 @@
         }
 
         // 3) Rebuild frames
-        // First, clear existing frames & rows
+        // Clear existing
         paper.innerHTML = "";
         frameList.innerHTML = "";
         frameHistory = [];
@@ -1796,7 +1814,7 @@
 
         if (data.frames && data.frames.length > 0) {
             data.frames.forEach(frameData => {
-                // Build frame just like in your addFrame code
+                // Build frame
                 const frame = document.createElement("div");
                 frame.className = "frame";
                 frame.id = frameData.id;
@@ -1808,25 +1826,22 @@
                 frame.setAttribute("data-orig-width", frameData.dataOrigWidth);
                 frame.setAttribute("data-orig-height", frameData.dataOrigHeight);
 
-                // e.g. add the ID display inside
+                // ID display
                 const idDisplay = document.createElement('div');
                 idDisplay.className = 'frame-id-display';
                 idDisplay.textContent = frameData.id;
                 frame.appendChild(idDisplay);
 
-                // Insert it into paper
+                // Insert into paper
                 paper.appendChild(frame);
 
-                // Make the frame draggable again
+                // Make draggable
                 makeDraggable(frame);
 
-                // Add a row to the #frameList table
-                // We can replicate your "addFrame" row creation logic here:
-                // ---------------------------------------------------------
+                // Create row
                 const row = document.createElement("tr");
                 row.id = frameData.id + "-row";
 
-                // Convert stored px back to your displayed dimension
                 const widthPx = parseFloat(frameData.width) || 0;
                 const heightPx = parseFloat(frameData.height) || 0;
                 const displayedW = (widthPx / conversionFactors[currentUnit]).toFixed(2);
@@ -1850,25 +1865,21 @@
 
                 frameList.appendChild(row);
 
-                // Now attach event listeners for rotation, delete, ID rename, etc.
-                // (You can reuse the same logic from addFrame’s code, or factor it out into a helper.)
-                // For brevity, we won't repeat them all here, but do replicate them:
-                // e.g. for the “Delete” button:
+                // Attach the necessary listeners (delete, rotate, etc.)
                 const deleteBtn = row.querySelector(".delete-btn");
                 deleteBtn.addEventListener("click", function() {
                     deleteFrame(frameData.id);
                 });
 
-                // For the rotate slider, etc. just as in your existing code...
-                // At the end, update the display:
+                // Finally, update the display
                 updateFrameSizeDisplay(frame);
             });
         }
 
-        // Also restore frameHistory if you want to keep the same undo stack:
+        // Also restore frameHistory if needed
         frameHistory = data.frameHistory || [];
 
-        // 4) Optionally regenerate alignment lines if showAlignmentLines = true
+        // Regenerate alignment lines if applicable
         if (showAlignmentLines) {
             generateAlignmentLines();
         }
