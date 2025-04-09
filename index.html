@@ -493,8 +493,17 @@
         <table id="frameList">Drag this box around</table>
     </div>
 </div>
-
+<button onclick="testStorage()">Test localStorage</button>
 <script>
+    function testStorage() {
+        try {
+            localStorage.setItem('testKey', 'testValue');
+            var readBack = localStorage.getItem('testKey');
+            alert('We set "testValue" and got back: ' + readBack);
+        } catch (e) {
+            alert('localStorage error: ' + e.message);
+        }
+    }
     /* --------------------------------------------------
        KEY GLOBALS & SIMPLE HELPER VARS
        -------------------------------------------------- */
