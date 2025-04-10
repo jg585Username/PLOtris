@@ -1400,7 +1400,12 @@
     document.getElementById("toggleFrameSizes").addEventListener("click", function() {
         toggleFrameSizes();
     });
-
+    var toggleBtn = document.getElementById("toggleFrameSizes");
+    if (toggleBtn) {
+        toggleBtn.addEventListener("click", function() {
+            toggleFrameSizes();
+        });
+    }
     /* --------------------------------------------------
        ALIGNMENT LINES
        -------------------------------------------------- */
