@@ -119,26 +119,50 @@
            FRAME TRACKER SECTION
            ----------------------------------------------- */
         #frameTracker {
+            position: absolute;
+            width: 900px;       /* or whatever fixed width you want */
+            height: 600px;      /* or whatever fixed height you want */
+            overflow: auto;     /* scroll if content is bigger than 300×400 */
             background: #fff;
-            padding: 20px;
+            padding: 10px;      /* smaller padding for a compact look */
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+
+        /* 2) The table is “fixed layout” so columns don't auto-resize.
+              Also, no extra spacing between cells. */
         #frameTracker table {
-            background: #edf7f7;
+            table-layout: fixed;
             width: 100%;
             border-collapse: collapse;
+            background: #edf7f7;  /* your existing BG color */
         }
+
+        /* 3) Set a fixed row height & smaller text to keep rows short */
+        #frameTracker tr {
+            height: 24px;  /* Try 24px, 20px, 28px, etc. */
+        }
+
+        /* 4) Cells won’t expand row height, text is truncated with "..." if it’s too long */
         #frameTracker th,
         #frameTracker td {
-            padding: 8px 12px;
+            overflow: hidden;        /* No wrapping overflow */
+            white-space: nowrap;     /* Keep text on one line */
+            text-overflow: ellipsis; /* Show "..." if text is too wide for cell */
+            font-size: 12px;         /* Slightly smaller text */
+            padding: 2px 6px;        /* Minimal padding */
             text-align: left;
             border-bottom: 1px solid #ddd;
             transition: background-color 0.3s;
+            vertical-align: middle;  /* Keep text centered vertically */
         }
+
+        /* Header row background */
         #frameTracker th {
             background-color: #f0f0f0;
         }
+
+        /* Keep your existing “cursor: text;” on ID/dim cells if you like */
         .frame-id-cell {
             cursor: text;
         }
@@ -1625,6 +1649,9 @@
                     paper.style.width = newWidth + "px";
                     paper.style.height = newHeight + "px";
                 }
+                if (element.classList.contains("frame")) {
+                    optimizePaperSize();
+                }
                 optimizePaperSize();
                 updatePaperSizeDisplay();
             }
@@ -1637,6 +1664,9 @@
             setTimeout(function(){
                 generateAlignmentLines();
             }, 100);
+            if (element.classList.contains("frame")) {
+                optimizePaperSize();
+            }
             updatePaperSizeDisplay();
             highlightFrameRow(element.id);
             saveState();
